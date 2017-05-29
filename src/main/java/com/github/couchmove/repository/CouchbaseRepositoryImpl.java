@@ -25,23 +25,41 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
     private final Class<E> entityClass;
 
     /**
-     * If the {@link CouchbaseEntity#cas} of the entity is set, tries to replace the document with a Check And Set operation (Optimistic locking)
-     * </p>
-     * otherwise if replaces the document
+     * Save the entity on couchbase
      *
      * @param id     document id
      * @param entity entity to save
      * @return saved entity
-     * @throws com.couchbase.client.java.error.CASMismatchException if the cas of entity is different from existing one
      */
     @Override
     public E save(String id, E entity) {
+        try {
+            bucket.upsert(RawJsonDocument.create(id, getJsonMapper().writeValueAsString(entity)));
+            return entity;
+        } catch (JsonProcessingException e) {
+            throw new CouchMoveException("Unable to save document with id " + id, e);
+        }
+    }
+
+    /**
+     * If the {@link CouchbaseEntity#cas} of the entity is set, tries to replace the document with a Check And Set operation (Optimistic locking)
+     * </p>
+     * otherwise it insert the document
+     *
+     * @param id     document id
+     * @param entity entity to save
+     * @return saved entity
+     * @throws com.couchbase.client.java.error.CASMismatchException           if the cas of entity is different from existing one
+     * @throws com.couchbase.client.java.error.DocumentAlreadyExistsException if the cas is not set and the document exists on couchbase
+     */
+    @Override
+    public E checkAndSave(String id, E entity) {
         try {
             String content = getJsonMapper().writeValueAsString(entity);
             if (entity.getCas() != null) {
                 bucket.replace(RawJsonDocument.create(id, content, entity.getCas()));
             } else {
-                bucket.upsert(RawJsonDocument.create(id, content));
+                bucket.insert(RawJsonDocument.create(id, content));
             }
             return entity;
         } catch (JsonProcessingException e) {

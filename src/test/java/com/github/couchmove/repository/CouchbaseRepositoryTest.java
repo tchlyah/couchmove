@@ -1,6 +1,7 @@
 package com.github.couchmove.repository;
 
 import com.couchbase.client.java.error.CASMismatchException;
+import com.couchbase.client.java.error.DocumentAlreadyExistsException;
 import com.github.couchmove.container.AbstractCouchbaseTest;
 import com.github.couchmove.pojo.ChangeLog;
 import org.jetbrains.annotations.NotNull;
@@ -65,31 +66,46 @@ public class CouchbaseRepositoryTest extends AbstractCouchbaseTest {
         Assert.assertNull(repository.findOne(id));
     }
 
+    @Test(expected = DocumentAlreadyExistsException.class)
+    public void should_not_replace_entity_without_cas() {
+        // Given a changeLog saved on couchbase
+        ChangeLog changeLog = getRandomChangeLog();
+        String id = getRandomString();
+        repository.save(id, changeLog);
+
+        // When we tries to insert it without cas
+        changeLog.setCas(null);
+
+        // Then we should have exception upon saving with cas operation
+        repository.checkAndSave(id, changeLog);
+    }
+
     @Test(expected = CASMismatchException.class)
     public void should_not_insert_entity_with_different_cas() {
         // Given a changeLog saved on couchbase
         ChangeLog changeLog = getRandomChangeLog();
         String id = getRandomString();
         repository.save(id, changeLog);
-        ChangeLog savedChangeLog = repository.findOne(id);
 
         // Then it should have a cas
+        ChangeLog savedChangeLog = repository.findOne(id);
         Assert.assertNotNull(savedChangeLog.getCas());
 
         // When we change this cas
         savedChangeLog.setCas(new Random().nextLong());
 
         // Then we should have exception upon saving
-        repository.save(id, savedChangeLog);
+        repository.checkAndSave(id, savedChangeLog);
     }
 
+    //<editor-fold desc="Helpers">
     @NotNull
-    private String getRandomString() {
+    private static String getRandomString() {
         return UUID.randomUUID().toString();
     }
 
     @NotNull
-    private ChangeLog getRandomChangeLog() {
+    private static ChangeLog getRandomChangeLog() {
         Random random = new Random();
         return ChangeLog.builder()
                 .description(getRandomString())
@@ -98,5 +114,6 @@ public class CouchbaseRepositoryTest extends AbstractCouchbaseTest {
                 .success(true)
                 .build();
     }
+    //</editor-fold>
 
 }

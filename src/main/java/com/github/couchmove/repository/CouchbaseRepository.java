@@ -9,6 +9,8 @@ public interface CouchbaseRepository<E extends CouchbaseEntity> {
 
     E save(String id, E entity);
 
+    E checkAndSave(String id, E entity);
+
     void delete(String id);
 
     E findOne(String id);
