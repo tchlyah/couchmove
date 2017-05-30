@@ -7,7 +7,7 @@ import com.couchbase.client.java.CouchbaseCluster;
 import com.couchbase.client.java.bucket.BucketType;
 import com.couchbase.client.java.cluster.DefaultBucketSettings;
 import lombok.Getter;
-import org.junit.ClassRule;
+import org.junit.After;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -22,14 +22,19 @@ public abstract class AbstractCouchbaseTest {
         ((Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME)).setLevel(Level.INFO);
     }
 
-    @ClassRule
-    public final static CouchbaseContainer couchbaseContainer = initCouchbaseContainer();
+    @Getter(lazy = true)
+    private final static CouchbaseContainer couchbaseContainer = initCouchbaseContainer();
 
     @Getter(lazy = true)
     private final static Bucket bucket = openBucket(DEFAULT_BUCKET);
 
+    @After
+    public void clear() {
+        getBucket().bucketManager().flush();
+    }
+
     private static CouchbaseContainer initCouchbaseContainer() {
-        return new CouchbaseContainer()
+        CouchbaseContainer couchbaseContainer = new CouchbaseContainer()
                 .withFTS(false)
                 .withIndex(false)
                 .withQuery(false)
@@ -42,14 +47,12 @@ public abstract class AbstractCouchbaseTest {
                         .replicas(0)
                         .type(BucketType.COUCHBASE)
                         .build());
+        couchbaseContainer.start();
+        return couchbaseContainer;
     }
 
     private static Bucket openBucket(String bucketName) {
-        CouchbaseCluster cluster = couchbaseContainer.getCouchbaseCluster();
+        CouchbaseCluster cluster = getCouchbaseContainer().getCouchbaseCluster();
         return cluster.openBucket(bucketName);
-    }
-
-    public static void flush() {
-        getBucket().bucketManager().flush();
     }
 }

@@ -5,7 +5,6 @@ import com.couchbase.client.java.error.DocumentAlreadyExistsException;
 import com.github.couchmove.container.AbstractCouchbaseTest;
 import com.github.couchmove.pojo.ChangeLog;
 import org.jetbrains.annotations.NotNull;
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -20,18 +19,9 @@ public class CouchbaseRepositoryTest extends AbstractCouchbaseTest {
 
     private static CouchbaseRepository<ChangeLog> repository;
 
-    private static CouchbaseRepository<ChangeLog> initializeRepository() {
-        return new CouchbaseRepositoryImpl<>(AbstractCouchbaseTest.getBucket(), ChangeLog.class);
-    }
-
     @BeforeClass
     public static void setUp() {
-        repository = initializeRepository();
-    }
-
-    @After
-    public void clear() {
-        AbstractCouchbaseTest.flush();
+        repository = new CouchbaseRepositoryImpl<>(AbstractCouchbaseTest.getBucket(), ChangeLog.class);
     }
 
     @Test
