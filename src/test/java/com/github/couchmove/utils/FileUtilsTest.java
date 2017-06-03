@@ -1,5 +1,6 @@
 package com.github.couchmove.utils;
 
+import com.github.couchmove.pojo.Type;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
@@ -10,8 +11,8 @@ import org.junit.runner.RunWith;
 import java.io.File;
 import java.nio.file.Path;
 
-import static com.github.couchmove.service.ChangeLogFileService.JSON;
-import static com.github.couchmove.service.ChangeLogFileService.N1QL;
+import static com.github.couchmove.pojo.Type.DESIGN_DOC;
+import static com.github.couchmove.pojo.Type.N1QL;
 
 /**
  * Created by tayebchlyah on 02/06/2017.
@@ -51,6 +52,6 @@ public class FileUtilsTest {
     @Test
     @UseDataProvider("fileProvider")
     public void should_calculate_checksum_of_file_or_folder(String path, String expectedChecksum) throws Exception {
-        Assert.assertEquals(path, expectedChecksum, FileUtils.calculateChecksum(FileUtils.getPathFromResource(path).toFile(), JSON, N1QL));
+        Assert.assertEquals(path, expectedChecksum, FileUtils.calculateChecksum(FileUtils.getPathFromResource(path).toFile(), DESIGN_DOC.getExtension(), N1QL.getExtension()));
     }
 }

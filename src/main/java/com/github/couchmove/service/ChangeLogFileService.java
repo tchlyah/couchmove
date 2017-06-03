@@ -17,14 +17,15 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.github.couchmove.pojo.Type.DESIGN_DOC;
+import static com.github.couchmove.pojo.Type.N1QL;
+
 /**
  * Created by tayebchlyah on 30/05/2017.
  */
 public class ChangeLogFileService {
 
     private static final Logger logger = LoggerFactory.getLogger(ChangeLogFileService.class);
-    public static final String JSON = "json";
-    public static final String N1QL = "n1ql";
 
     private static Pattern fileNamePattern = Pattern.compile("V([\\w.]+)__([\\w ]+)\\.?(\\w*)$");
 
@@ -47,7 +48,7 @@ public class ChangeLogFileService {
                         .script(fileName)
                         .description(matcher.group(2).replace("_", " "))
                         .type(getChangeLogType(file))
-                        .checksum(FileUtils.calculateChecksum(file, JSON, N1QL))
+                        .checksum(FileUtils.calculateChecksum(file, DESIGN_DOC.getExtension(), N1QL.getExtension()))
                         .build();
                 logger.debug("Fetched one : {}", changeLog);
                 sortedChangeLogs.add(changeLog);
@@ -80,11 +81,11 @@ public class ChangeLogFileService {
             return Type.DOCUMENTS;
         } else {
             String extension = FilenameUtils.getExtension(file.getName()).toLowerCase();
-            switch (extension) {
-                case N1QL:
-                    return Type.N1QL;
-                case JSON:
-                    return Type.DESIGN_DOC;
+            if (DESIGN_DOC.getExtension().equals(extension)) {
+                return DESIGN_DOC;
+            }
+            if (N1QL.getExtension().equals(extension)) {
+                return N1QL;
             }
         }
         throw new CouchMoveException("Unknown ChangeLog type : " + file.getName());

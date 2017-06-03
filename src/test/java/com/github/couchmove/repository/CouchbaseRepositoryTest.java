@@ -4,7 +4,7 @@ import com.couchbase.client.java.error.CASMismatchException;
 import com.couchbase.client.java.error.DocumentAlreadyExistsException;
 import com.github.couchmove.container.AbstractCouchbaseTest;
 import com.github.couchmove.pojo.ChangeLog;
-import org.jetbrains.annotations.NotNull;
+import com.github.couchmove.utils.TestUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -28,7 +28,7 @@ public class CouchbaseRepositoryTest extends AbstractCouchbaseTest {
     @Test
     public void should_save_and_get_entity() {
         // Given a changeLog
-        ChangeLog changeLog = getRandomChangeLog();
+        ChangeLog changeLog = TestUtils.getRandomChangeLog();
 
         // When we insert it with an id
         String id = getRandomString();
@@ -44,7 +44,7 @@ public class CouchbaseRepositoryTest extends AbstractCouchbaseTest {
     @Test
     public void should_delete_entity() {
         // Given a changeLog saved on couchbase
-        ChangeLog changeLog = getRandomChangeLog();
+        ChangeLog changeLog = TestUtils.getRandomChangeLog();
 
         String id = getRandomString();
         repository.save(id, changeLog);
@@ -60,7 +60,7 @@ public class CouchbaseRepositoryTest extends AbstractCouchbaseTest {
     @Test(expected = DocumentAlreadyExistsException.class)
     public void should_not_replace_entity_without_cas() {
         // Given a changeLog saved on couchbase
-        ChangeLog changeLog = getRandomChangeLog();
+        ChangeLog changeLog = TestUtils.getRandomChangeLog();
         String id = getRandomString();
         repository.save(id, changeLog);
 
@@ -74,7 +74,7 @@ public class CouchbaseRepositoryTest extends AbstractCouchbaseTest {
     @Test(expected = CASMismatchException.class)
     public void should_not_insert_entity_with_different_cas() {
         // Given a changeLog saved on couchbase
-        ChangeLog changeLog = getRandomChangeLog();
+        ChangeLog changeLog = TestUtils.getRandomChangeLog();
         String id = getRandomString();
         repository.save(id, changeLog);
 
@@ -88,17 +88,5 @@ public class CouchbaseRepositoryTest extends AbstractCouchbaseTest {
         // Then we should have exception upon saving
         repository.checkAndSave(id, savedChangeLog);
     }
-
-    //<editor-fold desc="Helpers">
-    @NotNull
-    private static ChangeLog getRandomChangeLog() {
-        return ChangeLog.builder()
-                .description(getRandomString())
-                .duration(new Random().nextInt())
-                .checksum(getRandomString())
-                .success(true)
-                .build();
-    }
-    //</editor-fold>
 
 }
