@@ -1,0 +1,2 @@
+CREATE INDEX 'user_index' ON default
+  WHERE type = 'user'

@@ -7,4 +7,8 @@ public class CouchMoveException extends RuntimeException {
     public CouchMoveException(String message, Throwable cause) {
         super(message, cause);
     }
+
+    public CouchMoveException(String message) {
+        super(message);
+    }
 }

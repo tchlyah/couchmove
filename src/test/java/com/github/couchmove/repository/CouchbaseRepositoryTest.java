@@ -10,7 +10,8 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.Random;
-import java.util.UUID;
+
+import static com.github.couchmove.utils.TestUtils.getRandomString;
 
 /**
  * Created by tayebchlyah on 28/05/2017.
@@ -90,17 +91,11 @@ public class CouchbaseRepositoryTest extends AbstractCouchbaseTest {
 
     //<editor-fold desc="Helpers">
     @NotNull
-    private static String getRandomString() {
-        return UUID.randomUUID().toString();
-    }
-
-    @NotNull
     private static ChangeLog getRandomChangeLog() {
-        Random random = new Random();
         return ChangeLog.builder()
                 .description(getRandomString())
-                .duration(random.nextInt())
-                .checksum(random.nextInt())
+                .duration(new Random().nextInt())
+                .checksum(getRandomString())
                 .success(true)
                 .build();
     }
