@@ -9,13 +9,13 @@ import java.util.Date;
 /**
  * Created by tayebchlyah on 27/05/2017.
  */
-@Builder
+@Builder(toBuilder = true)
 @Data
 public class ChangeLog extends CouchbaseEntity implements Comparable<ChangeLog> {
 
     private String version;
 
-    private int order;
+    private Integer order;
 
     private String description;
 
@@ -29,9 +29,9 @@ public class ChangeLog extends CouchbaseEntity implements Comparable<ChangeLog> 
 
     private Date timestamp;
 
-    private long duration;
+    private Long duration;
 
-    private boolean success;
+    private Status status;
 
     @Override
     public int compareTo(@NotNull ChangeLog o) {

@@ -1,6 +1,7 @@
 package com.github.couchmove.utils;
 
 import com.github.couchmove.pojo.ChangeLog;
+import com.github.couchmove.pojo.Status;
 import com.github.couchmove.pojo.Type;
 import org.jetbrains.annotations.NotNull;
 
@@ -12,7 +13,7 @@ import java.util.UUID;
  */
 public class TestUtils {
 
-    private static final Random RANDOM = new Random();
+    public static final Random RANDOM = new Random();
 
     @NotNull
     public static String getRandomString() {
@@ -29,9 +30,9 @@ public class TestUtils {
                 .description(description)
                 .type(type)
                 .script("V" + version + "__" + description + (!type.getExtension().isEmpty() ? "." + type.getExtension() : ""))
-                .duration(RANDOM.nextInt())
+                .duration(RANDOM.nextLong())
                 .checksum(getRandomString())
-                .success(true)
+                .status(Status.values()[Math.abs(RANDOM.nextInt(Status.values().length))])
                 .build();
     }
 }
