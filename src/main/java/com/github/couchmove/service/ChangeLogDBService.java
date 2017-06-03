@@ -5,8 +5,6 @@ import com.github.couchmove.exception.CouchMoveException;
 import com.github.couchmove.pojo.ChangeLog;
 import com.github.couchmove.repository.CouchbaseRepository;
 import com.github.couchmove.repository.CouchbaseRepositoryImpl;
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,7 +28,7 @@ public class ChangeLogDBService {
     }
 
     public List<ChangeLog> fetchAndCompare(List<ChangeLog> changeLogs) {
-        logger.info("Fetching changeLogs from database");
+        logger.info("Fetching changeLogs from bucket '{}'", repository.getBucketName());
         List<ChangeLog> result = new ArrayList<>(changeLogs.size());
         for (ChangeLog changeLog : changeLogs) {
             String version = changeLog.getVersion();
@@ -49,6 +47,11 @@ public class ChangeLogDBService {
                 result.add(dbChangeLog);
             }
         }
+        logger.info("Fetched {} changeLogs from bucket", result.size());
         return Collections.unmodifiableList(result);
+    }
+
+    public String getBucketName() {
+        return repository.getBucketName();
     }
 }

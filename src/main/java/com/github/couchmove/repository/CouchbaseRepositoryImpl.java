@@ -86,4 +86,9 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
             throw new CouchMoveException("Unable to read document with id " + id, e);
         }
     }
+
+    @Override
+    public String getBucketName() {
+        return bucket.name();
+    }
 }

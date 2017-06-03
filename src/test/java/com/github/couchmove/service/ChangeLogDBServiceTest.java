@@ -4,6 +4,7 @@ import com.github.couchmove.exception.CouchMoveException;
 import com.github.couchmove.pojo.ChangeLog;
 import com.github.couchmove.repository.CouchbaseRepository;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -32,6 +33,11 @@ public class ChangeLogDBServiceTest {
     @Mock
     private CouchbaseRepository<ChangeLog> repository;
 
+    @Before
+    public void init() {
+        when(repository.getBucketName()).thenReturn("default");
+    }
+
     @Test
     public void should_fetch_return_same_changeLogs_when_absent() {
         // Given changeLogs stored in DB
@@ -41,8 +47,8 @@ public class ChangeLogDBServiceTest {
         List<ChangeLog> changeLogs = Lists.newArrayList(getRandomChangeLog(), getRandomChangeLog());
         List<ChangeLog> result = service.fetchAndCompare(changeLogs);
 
-                // Then we should return the same
-                Assert.assertEquals(changeLogs, result);
+        // Then we should return the same
+        Assert.assertEquals(changeLogs, result);
     }
 
     @Test(expected = CouchMoveException.class)

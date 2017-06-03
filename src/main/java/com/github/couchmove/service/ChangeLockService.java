@@ -23,18 +23,18 @@ public class ChangeLockService {
 
     private static final String LOCK_ID = "DATABASE_CHANGELOG_LOCK";
 
-    private final CouchbaseRepository<ChangeLock> changeLockRepository;
+    private final CouchbaseRepository<ChangeLock> repository;
 
     private String uuid;
 
     public ChangeLockService(Bucket bucket) {
-        this.changeLockRepository = new CouchbaseRepositoryImpl<>(bucket, ChangeLock.class);
+        this.repository = new CouchbaseRepositoryImpl<>(bucket, ChangeLock.class);
     }
 
     public boolean acquireLock() {
-        logger.info("Trying to acquire database lock...");
+        logger.info("Trying to acquire bucket '{}' lock...", repository.getBucketName());
         // Verify if there is any lock on database
-        ChangeLock lock = changeLockRepository.findOne(LOCK_ID);
+        ChangeLock lock = repository.findOne(LOCK_ID);
         // If none, create one
         if (lock == null) {
             lock = new ChangeLock();
@@ -49,11 +49,11 @@ public class ChangeLockService {
         lock.setUuid(uuid = UUID.randomUUID().toString());
         // Tries to save it with Optimistic locking
         try {
-            changeLockRepository.checkAndSave(LOCK_ID, lock);
+            repository.checkAndSave(LOCK_ID, lock);
         } catch (CASMismatchException | DocumentAlreadyExistsException e) {
             // In case of exception, this means an other process got the lock, logging its information
-            lock = changeLockRepository.findOne(LOCK_ID);
-            logger.warn("The database is already locked by '{}'", lock.getRunner());
+            lock = repository.findOne(LOCK_ID);
+            logger.warn("The bucket '{}' is already locked by '{}'", repository.getBucketName(), lock.getRunner());
             return false;
         }
         logger.info("Lock acquired");
@@ -61,7 +61,7 @@ public class ChangeLockService {
     }
 
     public boolean isLockAcquired() {
-        ChangeLock lock = changeLockRepository.findOne(LOCK_ID);
+        ChangeLock lock = repository.findOne(LOCK_ID);
         if (lock == null) {
             return false;
         }
@@ -76,7 +76,8 @@ public class ChangeLockService {
     }
 
     public void releaseLock() {
-        changeLockRepository.delete(LOCK_ID);
+        logger.info("Release lock");
+        repository.delete(LOCK_ID);
     }
 
     //<editor-fold desc="Helpers">

@@ -1,5 +1,6 @@
 package com.github.couchmove.repository;
 
+import com.couchbase.client.java.Bucket;
 import com.github.couchmove.pojo.CouchbaseEntity;
 
 /**
@@ -14,4 +15,6 @@ public interface CouchbaseRepository<E extends CouchbaseEntity> {
     void delete(String id);
 
     E findOne(String id);
+
+    String getBucketName();
 }
