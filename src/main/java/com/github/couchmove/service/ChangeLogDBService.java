@@ -74,7 +74,19 @@ public class ChangeLogDBService {
         return Collections.unmodifiableList(result);
     }
 
-    public String getBucketName() {
-        return repository.getBucketName();
+    public ChangeLog save(ChangeLog changeLog) {
+        return repository.save(PREFIX_ID + changeLog.getVersion(), changeLog);
+    }
+
+    public boolean importDesignDoc(String script) {
+        return true;
+    }
+
+    public boolean executeN1ql(String script) {
+        return true;
+    }
+
+    public boolean importDocuments(String script) {
+        return true;
     }
 }
