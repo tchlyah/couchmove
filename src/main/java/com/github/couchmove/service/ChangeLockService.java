@@ -6,11 +6,10 @@ import com.couchbase.client.java.error.DocumentAlreadyExistsException;
 import com.github.couchmove.pojo.ChangeLock;
 import com.github.couchmove.repository.CouchbaseRepository;
 import com.github.couchmove.repository.CouchbaseRepositoryImpl;
+import com.github.couchmove.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.Date;
 import java.util.UUID;
 
@@ -45,7 +44,7 @@ public class ChangeLockService {
         // Create Lock information
         lock.setLocked(true);
         lock.setTimestamp(new Date());
-        lock.setRunner(getUsername());
+        lock.setRunner(Utils.getUsername());
         lock.setUuid(uuid = UUID.randomUUID().toString());
         // Tries to save it with Optimistic locking
         try {
@@ -80,32 +79,5 @@ public class ChangeLockService {
         repository.delete(LOCK_ID);
     }
 
-    //<editor-fold desc="Helpers">
-    private static String getUsername() {
-        String osName = System.getProperty("os.name").toLowerCase();
-        String className = null;
-        String methodName = "getUsername";
-
-        if (osName.contains("windows")) {
-            className = "com.sun.security.auth.module.NTSystem";
-            methodName = "getName";
-        } else if (osName.contains("linux") || osName.contains("mac")) {
-            className = "com.sun.security.auth.module.UnixSystem";
-        } else if (osName.contains("solaris") || osName.contains("sunos")) {
-            className = "com.sun.security.auth.module.SolarisSystem";
-        }
-
-        if (className != null) {
-            try {
-                Class<?> c = Class.forName(className);
-                Method method = c.getDeclaredMethod(methodName);
-                Object o = c.newInstance();
-                return method.invoke(o).toString();
-            } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InstantiationException | InvocationTargetException e) {
-                logger.error("Unable to get actual user name", e);
-            }
-        }
-        return "unknown";
-    }
     //</editor-fold>
 }
