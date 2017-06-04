@@ -27,6 +27,21 @@ public class ChangeLogDBService {
         this.repository = new CouchbaseRepositoryImpl<>(bucket, ChangeLog.class);
     }
 
+    /**
+     * Get corresponding ChangeLogs from Couchbase bucket
+     * <ul>
+     *     <li>if a {@link ChangeLog} doesn't exist => return it as it its
+     *     <li>else :
+     *     <ul>
+     *         <li>if checksum ({@link ChangeLog#checksum}) is reset (set to null), or description ({@link ChangeLog#description}) updated => reset {@link ChangeLog#cas}
+     *         <li>return database version
+     *     </ul>
+     * </ul>
+     *
+     * @param changeLogs to load from database
+     * @return database version of changeLogs
+     * @throws CouchMoveException if checksum doesn't match
+     */
     public List<ChangeLog> fetchAndCompare(List<ChangeLog> changeLogs) {
         logger.info("Fetching changeLogs from bucket '{}'", repository.getBucketName());
         List<ChangeLog> result = new ArrayList<>(changeLogs.size());
@@ -36,16 +51,24 @@ public class ChangeLogDBService {
             if (dbChangeLog == null) {
                 logger.debug("ChangeLog version '{}' not found", version);
                 result.add(changeLog);
-            } else if (dbChangeLog.getChecksum() != null && !dbChangeLog.getChecksum().equals(changeLog.getChecksum())) {
+                continue;
+            }
+            if (dbChangeLog.getChecksum() == null) {
+                logger.warn("ChangeLog version '{}' checksum reset");
+                dbChangeLog.setChecksum(changeLog.getChecksum());
+                dbChangeLog.setCas(null);
+            } else if (!dbChangeLog.getChecksum().equals(changeLog.getChecksum())) {
                 logger.error("ChangeLog version '{}' checksum doesn't match, please verify if the script '{}' content was modified", changeLog.getVersion(), changeLog.getScript());
                 throw new CouchMoveException("ChangeLog checksum doesn't match");
-            } else {
+            }
+            if (!dbChangeLog.getDescription().equals(changeLog.getDescription())) {
                 logger.warn("ChangeLog version '{}' description updated");
                 logger.debug("{} was {}", dbChangeLog, changeLog);
                 dbChangeLog.setDescription(changeLog.getDescription());
                 dbChangeLog.setScript(changeLog.getScript());
-                result.add(dbChangeLog);
+                dbChangeLog.setCas(null);
             }
+            result.add(dbChangeLog);
         }
         logger.info("Fetched {} changeLogs from bucket", result.size());
         return Collections.unmodifiableList(result);

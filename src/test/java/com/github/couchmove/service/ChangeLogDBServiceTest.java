@@ -17,8 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.github.couchmove.service.ChangeLogDBService.PREFIX_ID;
-import static com.github.couchmove.utils.TestUtils.getRandomChangeLog;
-import static com.github.couchmove.utils.TestUtils.getRandomString;
+import static com.github.couchmove.utils.TestUtils.*;
 import static org.mockito.Mockito.when;
 
 /**
@@ -51,6 +50,26 @@ public class ChangeLogDBServiceTest {
         Assert.assertEquals(changeLogs, result);
     }
 
+    @Test
+    public void should_fetch_return_unchanged_changeLogs() {
+        // Given changeLogs stored in DB
+        ChangeLog changeLog1 = getRandomChangeLog();
+        changeLog1.setCas(RANDOM.nextLong());
+        when(repository.findOne(PREFIX_ID + changeLog1.getVersion())).thenReturn(changeLog1);
+        ChangeLog changeLog2 = getRandomChangeLog();
+        changeLog2.setCas(RANDOM.nextLong());
+        when(repository.findOne(PREFIX_ID + changeLog2.getVersion())).thenReturn(changeLog2);
+
+        // When we call service with the later
+        List<ChangeLog> changeLogs = Lists.newArrayList(changeLog1, changeLog2);
+        List<ChangeLog> result = service.fetchAndCompare(changeLogs);
+
+        // Then nothing should be returned
+        Assert.assertEquals(changeLogs, result);
+        Assert.assertNotNull(changeLogs.get(0).getCas());
+        Assert.assertNotNull(changeLogs.get(1).getCas());
+    }
+
     @Test(expected = CouchMoveException.class)
     public void should_fetch_fail_when_checksum_does_not_match() {
         // Given a changeLog stored on DB
@@ -69,25 +88,17 @@ public class ChangeLogDBServiceTest {
     }
 
     @Test
-    public void should_return_updated_changeLog_if_info_changed() {
+    public void should_return_updated_changeLog_checksum_with_cas_reset_if_checksum_reset() {
         // Given a changeLog stored on DB
         ChangeLog dbChangeLog = getRandomChangeLog();
+        dbChangeLog.setChecksum(null);
+        dbChangeLog.setCas(RANDOM.nextLong());
         when(repository.findOne(PREFIX_ID + dbChangeLog.getVersion())).thenReturn(dbChangeLog);
 
         // And a changeLog with different description
-        ChangeLog changeLog = ChangeLog.builder()
-                .version(dbChangeLog.getVersion())
-                .type(dbChangeLog.getType())
-                .checksum(dbChangeLog.getChecksum())
-                .runner(dbChangeLog.getRunner())
-                .duration(dbChangeLog.getDuration())
-                .order(dbChangeLog.getOrder())
-                .status(dbChangeLog.getStatus())
-                .description(getRandomString())
-                .script(getRandomString())
+        ChangeLog changeLog = dbChangeLog.toBuilder()
+                .checksum(getRandomString())
                 .build();
-        changeLog.setVersion(dbChangeLog.getVersion());
-        changeLog.setChecksum(dbChangeLog.getChecksum());
 
         // When we call service with the later
         ArrayList<ChangeLog> changeLogs = Lists.newArrayList(changeLog);
@@ -95,5 +106,30 @@ public class ChangeLogDBServiceTest {
 
         // Then it should be same
         Assert.assertEquals(changeLogs, result);
+        Assert.assertNull(changeLog.getCas());
     }
+
+    @Test
+    public void should_return_updated_changeLog_with_cas_reset_if_description_changed() {
+        // Given a changeLog stored on DB
+        ChangeLog dbChangeLog = getRandomChangeLog();
+        dbChangeLog.setCas(RANDOM.nextLong());
+        when(repository.findOne(PREFIX_ID + dbChangeLog.getVersion())).thenReturn(dbChangeLog);
+
+        // And a changeLog with different description
+        ChangeLog changeLog = dbChangeLog.toBuilder()
+                .description(getRandomString())
+                .script(getRandomString())
+                .build();
+
+        // When we call service with the later
+        ArrayList<ChangeLog> changeLogs = Lists.newArrayList(changeLog);
+        List<ChangeLog> result = service.fetchAndCompare(changeLogs);
+
+        // Then it should be same
+        Assert.assertEquals(changeLogs, result);
+        Assert.assertNull(changeLog.getCas());
+    }
+
+
 }
