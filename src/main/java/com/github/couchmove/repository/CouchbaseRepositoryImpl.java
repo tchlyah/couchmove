@@ -34,7 +34,8 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
     @Override
     public E save(String id, E entity) {
         try {
-            bucket.upsert(RawJsonDocument.create(id, getJsonMapper().writeValueAsString(entity)));
+            RawJsonDocument insertedDocument = bucket.upsert(RawJsonDocument.create(id, getJsonMapper().writeValueAsString(entity)));
+            entity.setCas(insertedDocument.cas());
             return entity;
         } catch (JsonProcessingException e) {
             throw new CouchMoveException("Unable to save document with id " + id, e);
@@ -56,11 +57,13 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
     public E checkAndSave(String id, E entity) {
         try {
             String content = getJsonMapper().writeValueAsString(entity);
+            RawJsonDocument insertedDocument;
             if (entity.getCas() != null) {
-                bucket.replace(RawJsonDocument.create(id, content, entity.getCas()));
+                insertedDocument = bucket.replace(RawJsonDocument.create(id, content, entity.getCas()));
             } else {
-                bucket.insert(RawJsonDocument.create(id, content));
+                insertedDocument = bucket.insert(RawJsonDocument.create(id, content));
             }
+            entity.setCas(insertedDocument.cas());
             return entity;
         } catch (JsonProcessingException e) {
             throw new CouchMoveException("Unable to save document with id " + id, e);

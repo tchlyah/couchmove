@@ -32,13 +32,20 @@ public class CouchbaseRepositoryTest extends AbstractCouchbaseTest {
 
         // When we insert it with an id
         String id = getRandomString();
-        repository.save(id, changeLog);
+        ChangeLog savedChangeLog = repository.save(id, changeLog);
 
-        // Then we should get it by this id
+        // Then inserted one should have a cas
+        Assert.assertNotNull(savedChangeLog.getCas());
+
+        // And we should get it by this id
         ChangeLog result = repository.findOne(id);
 
         Assert.assertNotNull(result);
         Assert.assertEquals(changeLog, result);
+
+        // And it should have the same cas
+        Assert.assertNotNull(result.getCas());
+        Assert.assertEquals(savedChangeLog.getCas(), result.getCas());
     }
 
     @Test
