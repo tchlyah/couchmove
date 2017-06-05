@@ -3,8 +3,6 @@ package com.github.couchmove;
 import com.couchbase.client.java.Bucket;
 import com.github.couchmove.exception.CouchMoveException;
 import com.github.couchmove.pojo.ChangeLog;
-import com.github.couchmove.pojo.Status;
-import com.github.couchmove.pojo.Type;
 import com.github.couchmove.service.ChangeLockService;
 import com.github.couchmove.service.ChangeLogDBService;
 import com.github.couchmove.service.ChangeLogFileService;
@@ -15,8 +13,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import static com.github.couchmove.pojo.Status.EXECUTED;
-import static com.github.couchmove.pojo.Status.SKIPPED;
+import static com.github.couchmove.pojo.Status.*;
+import static com.github.couchmove.pojo.Type.*;
 import static com.github.couchmove.utils.TestUtils.RANDOM;
 import static com.github.couchmove.utils.TestUtils.getRandomChangeLog;
 import static com.google.common.collect.Lists.newArrayList;
@@ -116,7 +114,7 @@ public class CouchMoveTest {
         executedChangeLog.setCas(RANDOM.nextLong());
         ChangeLog changeLog = ChangeLog.builder()
                 .version("2")
-                .type(Type.DOCUMENTS)
+                .type(DOCUMENTS)
                 .build();
         doReturn(true).when(couchMove).executeMigration(changeLog);
         couchMove.executeMigration(newArrayList(newArrayList(executedChangeLog, changeLog)));
@@ -128,7 +126,7 @@ public class CouchMoveTest {
         CouchMove couchMove = spy(CouchMove.class);
         ChangeLog changeLog = ChangeLog.builder()
                 .version("1")
-                .type(Type.N1QL)
+                .type(N1QL)
                 .build();
         doReturn(false).when(couchMove).executeMigration(changeLog);
         couchMove.executeMigration(newArrayList(changeLog));
@@ -138,30 +136,30 @@ public class CouchMoveTest {
     public void should_update_changeLog_on_migration_success() {
         ChangeLog changeLog = ChangeLog.builder()
                 .version("1")
-                .type(Type.DESIGN_DOC)
+                .description("description")
+                .type(DESIGN_DOC)
                 .build();
-        when(dbServiceMock.importDesignDoc(any())).thenReturn(true);
         couchMove.executeMigration(changeLog);
         verify(dbServiceMock).save(changeLog);
         Assert.assertNotNull(changeLog.getTimestamp());
         Assert.assertNotNull(changeLog.getDuration());
         Assert.assertNotNull(changeLog.getRunner());
-        Assert.assertEquals(changeLog.getStatus(), Status.EXECUTED);
+        Assert.assertEquals(EXECUTED, changeLog.getStatus());
     }
 
     @Test
     public void should_update_changeLog_on_migration_failure() {
         ChangeLog changeLog = ChangeLog.builder()
                 .version("1")
-                .type(Type.DOCUMENTS)
+                .type(DOCUMENTS)
                 .build();
-        when(dbServiceMock.importDocuments(any())).thenReturn(false);
+        doThrow(CouchMoveException.class).when(dbServiceMock).importDocuments(any());
         couchMove.executeMigration(changeLog);
         verify(dbServiceMock).save(changeLog);
         Assert.assertNotNull(changeLog.getTimestamp());
         Assert.assertNotNull(changeLog.getDuration());
         Assert.assertNotNull(changeLog.getRunner());
-        Assert.assertEquals(changeLog.getStatus(), Status.FAILED);
+        Assert.assertEquals(FAILED, changeLog.getStatus());
     }
 
     private static Bucket mockBucket() {

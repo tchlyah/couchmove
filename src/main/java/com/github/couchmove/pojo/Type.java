@@ -7,13 +7,18 @@ import lombok.Getter;
  */
 public enum Type {
     DOCUMENTS(""),
-    DESIGN_DOC("json"),
-    N1QL("n1ql");
+    DESIGN_DOC(Constants.JSON),
+    N1QL(Constants.N1QL);
 
     @Getter
     private final String extension;
 
     Type(String extension) {
         this.extension = extension;
+    }
+
+    public static class Constants {
+        public static final String JSON = "json";
+        public static final String N1QL = "n1ql";
     }
 }

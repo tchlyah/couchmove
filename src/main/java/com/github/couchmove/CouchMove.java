@@ -3,7 +3,6 @@ package com.github.couchmove;
 import com.couchbase.client.java.Bucket;
 import com.github.couchmove.exception.CouchMoveException;
 import com.github.couchmove.pojo.ChangeLog;
-import com.github.couchmove.pojo.Type;
 import com.github.couchmove.service.ChangeLockService;
 import com.github.couchmove.service.ChangeLogDBService;
 import com.github.couchmove.service.ChangeLogFileService;
@@ -140,7 +139,7 @@ public class CouchMove {
         Stopwatch sw = Stopwatch.createStarted();
         changeLog.setTimestamp(new Date());
         changeLog.setRunner(getUsername());
-        if (executeMigration(changeLog.getType(), changeLog.getScript())) {
+        if (doExecute(changeLog)) {
             logger.info("ChangeLog '{}' successfully executed", changeLog.getVersion());
             changeLog.setStatus(EXECUTED);
         } else {
@@ -152,16 +151,25 @@ public class CouchMove {
         return changeLog.getStatus() == EXECUTED;
     }
 
-    private boolean executeMigration(Type type, String script) {
-        switch (type) {
-            case DOCUMENTS:
-                return dbService.importDocuments(script);
-            case N1QL:
-                return dbService.executeN1ql(script);
-            case DESIGN_DOC:
-                return dbService.importDesignDoc(script);
-            default:
-                throw new IllegalArgumentException("Unknown ChangeLog Type '" + type + "'");
+    private boolean doExecute(ChangeLog changeLog) {
+        try {
+            switch (changeLog.getType()) {
+                case DOCUMENTS:
+                    dbService.importDocuments(fileService.readDocuments(changeLog.getScript()));
+                    break;
+                case N1QL:
+                    dbService.executeN1ql(fileService.readLines(changeLog.getScript()));
+                    break;
+                case DESIGN_DOC:
+                    dbService.importDesignDoc(changeLog.getDescription().replace(" ", "_"), fileService.readFile(changeLog.getScript()));
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unknown ChangeLog Type '" + changeLog.getType() + "'");
+            }
+            return true;
+        } catch (Exception e) {
+            logger.error("Unable to import " + changeLog.getType().name().toLowerCase().replace("_", " ") + " : '" + changeLog.getScript() + "'", e);
+            return false;
         }
     }
 }

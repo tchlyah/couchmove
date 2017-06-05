@@ -15,10 +15,15 @@ import org.testcontainers.shaded.com.google.common.collect.Lists;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.github.couchmove.service.ChangeLogDBService.PREFIX_ID;
+import static com.github.couchmove.service.ChangeLogDBService.filterRequests;
 import static com.github.couchmove.utils.TestUtils.*;
-import static org.mockito.Mockito.when;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.verify;
 
 /**
  * Created by tayebchlyah on 03/06/2017.
@@ -131,5 +136,18 @@ public class ChangeLogDBServiceTest {
         Assert.assertNull(changeLog.getCas());
     }
 
+    @Test
+    public void should_skip_n1ql_blank_and_comment_lines() {
+        String request = "CREATE INDEX PRIMARY INDEX 'primary' ON 'default'";
+        List<String> lines = Stream.of(
+                request,
+                "     ",
+                " -- toto",
+                "-- hello"
+        ).collect(Collectors.toList());
 
+        List<String> result = filterRequests(lines);
+        Assert.assertEquals(1, result.size());
+        Assert.assertEquals(request, result.get(0));
+    }
 }

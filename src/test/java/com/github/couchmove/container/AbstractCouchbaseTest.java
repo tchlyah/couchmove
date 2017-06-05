@@ -36,8 +36,8 @@ public abstract class AbstractCouchbaseTest {
     private static CouchbaseContainer initCouchbaseContainer() {
         CouchbaseContainer couchbaseContainer = new CouchbaseContainer()
                 .withFTS(false)
-                .withIndex(false)
-                .withQuery(false)
+                .withIndex(true)
+                .withQuery(true)
                 .withClusterUsername(CLUSTER_USER)
                 .withClusterPassword(CLUSTER_PASSWORD)
                 .withNewBucket(DefaultBucketSettings.builder()
@@ -53,6 +53,8 @@ public abstract class AbstractCouchbaseTest {
 
     private static Bucket openBucket(String bucketName) {
         CouchbaseCluster cluster = getCouchbaseContainer().getCouchbaseCluster();
-        return cluster.openBucket(bucketName);
+        Bucket bucket = cluster.openBucket(bucketName);
+        Runtime.getRuntime().addShutdownHook(new Thread(bucket::close));
+        return bucket;
     }
 }

@@ -15,6 +15,8 @@ import java.nio.file.*;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.apache.commons.io.IOUtils.toByteArray;
 
@@ -94,6 +96,36 @@ public class FileUtils {
             return DigestUtils.sha256Hex(toByteArray(file.toURI()));
         } catch (IOException e) {
             throw new CouchMoveException("Unable to calculate file checksum '" + file.getName() + "'");
+        }
+    }
+
+    public static Map<String, String> readFilesInDirectory(@NotNull File file, String... extensions) throws IOException {
+        if (file == null || !file.exists()) {
+            throw new IllegalArgumentException("File is null or doesn't exists");
+        }
+        if (!file.isDirectory()) {
+            throw new IllegalArgumentException("'" + file.getPath() + "' is not a directory");
+        }
+        try {
+            //noinspection ConstantConditions
+            return Arrays.stream(file.listFiles())
+                    .filter(File::isFile)
+                    .filter(f -> Arrays.stream(extensions)
+                            .anyMatch(extension -> FilenameUtils
+                                    .getExtension(f.getName()).toLowerCase()
+                                    .equals(extension.toLowerCase())))
+                    .collect(Collectors.toMap(File::getName, f -> {
+                        try {
+                            return new String(Files.readAllBytes(f.toPath()));
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }));
+        } catch (RuntimeException e) {
+            if (e.getCause() instanceof IOException) {
+                throw (IOException) e.getCause();
+            }
+            throw e;
         }
     }
 }

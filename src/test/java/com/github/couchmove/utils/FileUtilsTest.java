@@ -1,6 +1,6 @@
 package com.github.couchmove.utils;
 
-import com.github.couchmove.pojo.Type;
+import com.google.common.io.Files;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
@@ -9,10 +9,13 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Map;
 
 import static com.github.couchmove.pojo.Type.DESIGN_DOC;
 import static com.github.couchmove.pojo.Type.N1QL;
+import static com.github.couchmove.utils.TestUtils.getRandomString;
 
 /**
  * Created by tayebchlyah on 02/06/2017.
@@ -53,5 +56,42 @@ public class FileUtilsTest {
     @UseDataProvider("fileProvider")
     public void should_calculate_checksum_of_file_or_folder(String path, String expectedChecksum) throws Exception {
         Assert.assertEquals(path, expectedChecksum, FileUtils.calculateChecksum(FileUtils.getPathFromResource(path).toFile(), DESIGN_DOC.getExtension(), N1QL.getExtension()));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void should_read_files_failed_if_not_exists() throws Exception {
+        FileUtils.readFilesInDirectory(new File(""));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void should_read_files_failed_if_not_directory() throws Exception {
+        File temp = File.createTempFile(getRandomString(), "");
+        temp.deleteOnExit();
+        FileUtils.readFilesInDirectory(temp);
+    }
+
+    @Test
+    public void should_read_files_in_directory() throws IOException {
+        // Given a temp directory that contains
+        File tempDir = Files.createTempDir();
+        tempDir.deleteOnExit();
+        // json file
+        File file1 = File.createTempFile("file1", ".json", tempDir);
+        String content1 = "content1";
+        Files.write(content1.getBytes(), file1);
+        // n1ql file
+        File file2 = File.createTempFile("file2", ".N1QL", tempDir);
+        String content2 = "content2";
+        Files.write(content2.getBytes(), file2);
+        // txt file
+        Files.write(getRandomString().getBytes(), File.createTempFile(getRandomString(), ".txt", tempDir));
+
+        // When we read files in this directory with extension filter
+        Map<String, String> result = FileUtils.readFilesInDirectory(tempDir, "json", "n1ql");
+
+        // Then we should have file content matching this extension
+        Assert.assertEquals(2, result.size());
+        Assert.assertEquals(content1, result.get(file1.getName()));
+        Assert.assertEquals(content2, result.get(file2.getName()));
     }
 }

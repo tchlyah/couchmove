@@ -5,12 +5,18 @@ import com.github.couchmove.exception.CouchMoveException;
 import com.github.couchmove.pojo.ChangeLog;
 import com.github.couchmove.repository.CouchbaseRepository;
 import com.github.couchmove.repository.CouchbaseRepositoryImpl;
+import com.github.couchmove.utils.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import static com.github.couchmove.utils.FunctionUtils.not;
 
 /**
  * Created by tayebchlyah on 03/06/2017.
@@ -78,15 +84,28 @@ public class ChangeLogDBService {
         return repository.save(PREFIX_ID + changeLog.getVersion(), changeLog);
     }
 
-    public boolean importDesignDoc(String script) {
-        return true;
+    public void importDesignDoc(String name, String content) {
+        logger.info("Inserting Design Document '{}'...", name);
+        repository.importDesignDoc(name, content);
     }
 
-    public boolean executeN1ql(String script) {
-        return true;
+    public void executeN1ql(List<String> lines) {
+        List<String> requests = filterRequests(lines);
+        logger.info("Executing {} n1ql requests", requests.size());
+        requests.forEach(repository::query);
     }
 
-    public boolean importDocuments(String script) {
-        return true;
+    public void importDocuments(Map<String, String> documents) {
+        logger.info("Importing {} documents", documents.size());
+        documents.forEach((fileName, content) ->
+                repository.save(FilenameUtils.getBaseName(fileName), content));
+    }
+
+    static List<String> filterRequests(List<String> lines) {
+        return lines.stream()
+                .map(String::trim)
+                .filter(not(String::isEmpty))
+                .filter(s -> !s.startsWith("--"))
+                .collect(Collectors.toList());
     }
 }

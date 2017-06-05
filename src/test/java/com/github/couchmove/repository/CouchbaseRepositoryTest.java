@@ -2,15 +2,21 @@ package com.github.couchmove.repository;
 
 import com.couchbase.client.java.error.CASMismatchException;
 import com.couchbase.client.java.error.DocumentAlreadyExistsException;
+import com.couchbase.client.java.query.util.IndexInfo;
+import com.couchbase.client.java.view.DesignDocument;
 import com.github.couchmove.container.AbstractCouchbaseTest;
 import com.github.couchmove.pojo.ChangeLog;
+import com.github.couchmove.pojo.Type;
 import com.github.couchmove.utils.TestUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
 
+import static com.github.couchmove.utils.FunctionUtils.not;
 import static com.github.couchmove.utils.TestUtils.getRandomString;
 
 /**
@@ -22,7 +28,7 @@ public class CouchbaseRepositoryTest extends AbstractCouchbaseTest {
 
     @BeforeClass
     public static void setUp() {
-        repository = new CouchbaseRepositoryImpl<>(AbstractCouchbaseTest.getBucket(), ChangeLog.class);
+        repository = new CouchbaseRepositoryImpl<>(getBucket(), ChangeLog.class);
     }
 
     @Test
@@ -94,6 +100,64 @@ public class CouchbaseRepositoryTest extends AbstractCouchbaseTest {
 
         // Then we should have exception upon saving
         repository.checkAndSave(id, savedChangeLog);
+    }
+
+    @Test
+    public void should_import_design_doc() {
+        // Given a Design Doc
+        String name = "user";
+        String design_doc = "{\n" +
+                "  \"views\": {\n" +
+                "    \"findUser\": {\n" +
+                "      \"map\": \"function (doc, meta) {\\n  if (doc.type == \\\"user\\\") {\\n    emit(doc.username, null);\\n  } \\n}\"\n" +
+                "    }\n" +
+                "  }\n" +
+                "}";
+
+        // When we import it
+        repository.importDesignDoc(name, design_doc);
+
+        // Then it should be saved
+        DesignDocument designDocument = AbstractCouchbaseTest.getBucket().bucketManager().getDesignDocument(name);
+        Assert.assertNotNull(designDocument);
+    }
+
+    @Test
+    public void should_execute_n1ql() {
+        // Given a primary index request
+        String request = String.format("CREATE INDEX `%s` ON `%s`(`%s`)", "name", getBucket().name(), "name");
+
+        // When we execute the query
+        repository.query(request);
+
+        // Then the index should be created
+        List<IndexInfo> indexInfos = getBucket().bucketManager().listN1qlIndexes().stream()
+                .filter(not(IndexInfo::isPrimary))
+                .collect(Collectors.toList());
+        Assert.assertEquals(1, indexInfos.size());
+        IndexInfo indexInfo = indexInfos.get(0);
+        Assert.assertEquals("name", indexInfo.name());
+        Assert.assertEquals("name", indexInfo.indexKey().get(0));
+    }
+
+    @Test
+    public void should_save_json_document() {
+        // Given a json document
+        String json = "{\n" +
+                "  \"version\": \"1\",\n" +
+                "  \"description\": \"insert users\",\n" +
+                "  \"type\": \"N1QL\"\n" +
+                "}";
+
+        // When we save the document
+        repository.save("change::1", json);
+
+        // Then we should be bale to get it
+        ChangeLog changeLog = repository.findOne("change::1");
+        Assert.assertNotNull(changeLog);
+        Assert.assertEquals("1", changeLog.getVersion());
+        Assert.assertEquals("insert users", changeLog.getDescription());
+        Assert.assertEquals(Type.N1QL, changeLog.getType());
     }
 
 }

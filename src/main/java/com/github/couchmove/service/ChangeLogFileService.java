@@ -12,11 +12,13 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.github.couchmove.pojo.Type.Constants.JSON;
 import static com.github.couchmove.pojo.Type.DESIGN_DOC;
 import static com.github.couchmove.pojo.Type.N1QL;
 
@@ -58,6 +60,18 @@ public class ChangeLogFileService {
         return Collections.unmodifiableList(new ArrayList<>(sortedChangeLogs));
     }
 
+    public String readFile(String path) throws IOException {
+        return new String(Files.readAllBytes(resolve(path)));
+    }
+
+    public Map<String, String> readDocuments(String path) throws IOException {
+        return FileUtils.readFilesInDirectory(resolve(path).toFile(), JSON);
+    }
+
+    public List<String> readLines(String path) throws IOException {
+        return Files.readAllLines(resolve(path));
+    }
+
     //<editor-fold desc="Helpers">
     static File initializeFolder(String changePath) {
         Path path;
@@ -75,6 +89,10 @@ public class ChangeLogFileService {
         return file;
     }
 
+    private Path resolve(String path) {
+        return changeFolder.toPath().resolve(path);
+    }
+
     @NotNull
     static Type getChangeLogType(File file) {
         if (file.isDirectory()) {
@@ -90,7 +108,6 @@ public class ChangeLogFileService {
         }
         throw new CouchMoveException("Unknown ChangeLog type : " + file.getName());
     }
-
     //</editor-fold>
 
 }
