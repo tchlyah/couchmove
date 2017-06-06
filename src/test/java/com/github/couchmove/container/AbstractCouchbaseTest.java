@@ -38,6 +38,7 @@ public abstract class AbstractCouchbaseTest {
                 .withFTS(false)
                 .withIndex(true)
                 .withQuery(true)
+                .withPrimaryIndex(false)
                 .withClusterUsername(CLUSTER_USER)
                 .withClusterPassword(CLUSTER_PASSWORD)
                 .withNewBucket(DefaultBucketSettings.builder()

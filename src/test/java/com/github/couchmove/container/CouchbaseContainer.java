@@ -16,6 +16,7 @@
 package com.github.couchmove.container;
 
 import com.couchbase.client.core.utils.Base64;
+import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.CouchbaseCluster;
 import com.couchbase.client.java.cluster.BucketSettings;
 import com.couchbase.client.java.env.CouchbaseEnvironment;
@@ -50,6 +51,8 @@ public class CouchbaseContainer<SELF extends CouchbaseContainer<SELF>> extends G
     private Boolean query = true;
 
     private Boolean index = true;
+
+    private Boolean primaryIndex = true;
 
     private Boolean fts = true;
 
@@ -146,6 +149,11 @@ public class CouchbaseContainer<SELF extends CouchbaseContainer<SELF>> extends G
         return self();
     }
 
+    public SELF withPrimaryIndex(Boolean primaryIndex) {
+        this.primaryIndex = primaryIndex;
+        return self();
+    }
+
     public SELF withQuery(Boolean withQuery) {
         this.query = withQuery;
         return self();
@@ -231,16 +239,14 @@ public class CouchbaseContainer<SELF extends CouchbaseContainer<SELF>> extends G
         }
     }
 
-    public void createBucket(BucketSettings bucketSetting, Boolean createIndex) {
+    public void createBucket(BucketSettings bucketSetting, Boolean primaryIndex) {
         BucketSettings bucketSettings = getCouchbaseCluster().clusterManager(clusterUsername, clusterPassword).insertBucket(bucketSetting);
-        // allow some time for the query service to come up
-        try {
-            Thread.sleep(5000);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-        if (createIndex) {
-            getCouchbaseCluster().openBucket().query(Index.createPrimaryIndex().on(bucketSetting.name()));
+        if (index) {
+            Bucket bucket = getCouchbaseCluster().openBucket(bucketSettings.name());
+            new CouchbaseQueryServiceWaitStrategy(bucket).waitUntilReady(this);
+            if (primaryIndex) {
+                bucket.query(Index.createPrimaryIndex().on(bucketSetting.name()));
+            }
         }
     }
 
@@ -266,7 +272,7 @@ public class CouchbaseContainer<SELF extends CouchbaseContainer<SELF>> extends G
         super.start();
         if (!newBuckets.isEmpty()) {
             for (BucketSettings bucketSetting : newBuckets) {
-                createBucket(bucketSetting, index);
+                createBucket(bucketSetting, primaryIndex);
             }
         }
     }
