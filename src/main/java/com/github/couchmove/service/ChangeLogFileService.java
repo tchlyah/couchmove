@@ -68,10 +68,6 @@ public class ChangeLogFileService {
         return FileUtils.readFilesInDirectory(resolve(path).toFile(), JSON);
     }
 
-    public List<String> readLines(String path) throws IOException {
-        return Files.readAllLines(resolve(path));
-    }
-
     //<editor-fold desc="Helpers">
     static File initializeFolder(String changePath) {
         Path path;

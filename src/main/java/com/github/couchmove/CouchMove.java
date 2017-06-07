@@ -158,7 +158,7 @@ public class CouchMove {
                     dbService.importDocuments(fileService.readDocuments(changeLog.getScript()));
                     break;
                 case N1QL:
-                    dbService.executeN1ql(fileService.readLines(changeLog.getScript()));
+                    dbService.executeN1ql(fileService.readFile(changeLog.getScript()));
                     break;
                 case DESIGN_DOC:
                     dbService.importDesignDoc(changeLog.getDescription().replace(" ", "_"), fileService.readFile(changeLog.getScript()));

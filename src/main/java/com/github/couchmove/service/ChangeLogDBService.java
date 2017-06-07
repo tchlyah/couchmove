@@ -5,15 +5,11 @@ import com.github.couchmove.exception.CouchMoveException;
 import com.github.couchmove.pojo.ChangeLog;
 import com.github.couchmove.repository.CouchbaseRepository;
 import com.github.couchmove.repository.CouchbaseRepositoryImpl;
-import com.github.couchmove.utils.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.github.couchmove.utils.FunctionUtils.not;
@@ -36,12 +32,12 @@ public class ChangeLogDBService {
     /**
      * Get corresponding ChangeLogs from Couchbase bucket
      * <ul>
-     *     <li>if a {@link ChangeLog} doesn't exist => return it as it its
-     *     <li>else :
-     *     <ul>
-     *         <li>if checksum ({@link ChangeLog#checksum}) is reset (set to null), or description ({@link ChangeLog#description}) updated => reset {@link ChangeLog#cas}
-     *         <li>return database version
-     *     </ul>
+     * <li>if a {@link ChangeLog} doesn't exist => return it as it its
+     * <li>else :
+     * <ul>
+     * <li>if checksum ({@link ChangeLog#checksum}) is reset (set to null), or description ({@link ChangeLog#description}) updated => reset {@link ChangeLog#cas}
+     * <li>return database version
+     * </ul>
      * </ul>
      *
      * @param changeLogs to load from database
@@ -89,8 +85,8 @@ public class ChangeLogDBService {
         repository.importDesignDoc(name, content);
     }
 
-    public void executeN1ql(List<String> lines) {
-        List<String> requests = filterRequests(lines);
+    public void executeN1ql(String content) {
+        List<String> requests = extractRequests(content);
         logger.info("Executing {} n1ql requests", requests.size());
         requests.forEach(repository::query);
     }
@@ -101,11 +97,12 @@ public class ChangeLogDBService {
                 repository.save(FilenameUtils.getBaseName(fileName), content));
     }
 
-    static List<String> filterRequests(List<String> lines) {
-        return lines.stream()
+    static List<String> extractRequests(String content) {
+        String commentsRemoved = content.replaceAll("((?:--[^\\n]*)|(?s)(?:\\/\\*.*?\\*\\/))", "")
+                .trim();
+
+        return Arrays.stream(commentsRemoved.split(";"))
                 .map(String::trim)
-                .filter(not(String::isEmpty))
-                .filter(s -> !s.startsWith("--"))
                 .collect(Collectors.toList());
     }
 }
