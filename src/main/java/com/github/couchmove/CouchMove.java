@@ -9,6 +9,7 @@ import com.github.couchmove.service.ChangeLogFileService;
 import com.google.common.base.Stopwatch;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,6 +36,7 @@ public class CouchMove {
 
     private ChangeLockService lockService;
 
+    @Setter(AccessLevel.PACKAGE)
     private ChangeLogDBService dbService;
 
     private ChangeLogFileService fileService;
@@ -71,6 +73,8 @@ public class CouchMove {
 
             // Executing migration
             executeMigration(changeLogs);
+        } catch (Exception e) {
+            throw new CouchMoveException("Unable to migrate", e);
         } finally {
             // Release lock
             lockService.releaseLock();
@@ -119,8 +123,8 @@ public class CouchMove {
                 continue;
             }
 
-            if (executeMigration(changeLog)) {
-                changeLog.setOrder(++lastOrder);
+            if (executeMigration(changeLog, lastOrder + 1)) {
+                lastOrder++;
                 lastVersion = changeLog.getVersion();
                 migrationCount++;
             } else {
@@ -134,13 +138,14 @@ public class CouchMove {
         }
     }
 
-    boolean executeMigration(ChangeLog changeLog) {
+    boolean executeMigration(ChangeLog changeLog, int order) {
         logger.info("Executing ChangeLog '{}'", changeLog.getVersion());
         Stopwatch sw = Stopwatch.createStarted();
         changeLog.setTimestamp(new Date());
         changeLog.setRunner(getUsername());
         if (doExecute(changeLog)) {
             logger.info("ChangeLog '{}' successfully executed", changeLog.getVersion());
+            changeLog.setOrder(order);
             changeLog.setStatus(EXECUTED);
         } else {
             logger.error("Unable to execute ChangeLog '{}'", changeLog.getVersion());
@@ -151,7 +156,7 @@ public class CouchMove {
         return changeLog.getStatus() == EXECUTED;
     }
 
-    private boolean doExecute(ChangeLog changeLog) {
+    boolean doExecute(ChangeLog changeLog) {
         try {
             switch (changeLog.getType()) {
                 case DOCUMENTS:

@@ -59,7 +59,7 @@ public class ChangeLogFileServiceTest {
                         .script("V1__create_index.n1ql")
                         .version("1")
                         .description("create index")
-                        .checksum("bf0dae5d8fb638627eeabfb4b649d6100a8960da18859e12874e61063fbb16be")
+                        .checksum("eb4ed634d72ea0af9da0b990e0ebc81f6c09264109078e18d3d7b77cb64f28a5")
                         .build(),
                 ChangeLog.builder()
                         .type(Type.DOCUMENTS)
@@ -76,7 +76,7 @@ public class ChangeLogFileServiceTest {
                         .checksum("22df7f8496c21a3e1f3fbd241592628ad6a07797ea5d501df8ab6c65c94dbb79")
                         .build())
                 .collect(Collectors.toList());
-        Assert.assertEquals(changeLogs, new ChangeLogFileService("db/migration").fetch());
+        Assert.assertEquals(changeLogs, new ChangeLogFileService("db/migration/success").fetch());
     }
 
 }

@@ -1,0 +1,3 @@
+-- create Index
+CREATE INDEX user_index ON default(username)
+  WHERE type = 'user';

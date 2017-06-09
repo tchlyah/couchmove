@@ -64,7 +64,7 @@ public class ChangeLogDBService {
                 throw new CouchMoveException("ChangeLog checksum doesn't match");
             }
             if (!dbChangeLog.getDescription().equals(changeLog.getDescription())) {
-                logger.warn("ChangeLog version '{}' description updated");
+                logger.warn("ChangeLog version '{}' description updated", changeLog.getDescription());
                 logger.debug("{} was {}", dbChangeLog, changeLog);
                 dbChangeLog.setDescription(changeLog.getDescription());
                 dbChangeLog.setScript(changeLog.getScript());

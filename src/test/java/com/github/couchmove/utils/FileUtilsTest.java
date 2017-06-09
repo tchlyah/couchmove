@@ -23,7 +23,7 @@ import static com.github.couchmove.utils.TestUtils.getRandomString;
 @RunWith(DataProviderRunner.class)
 public class FileUtilsTest {
 
-    public static final String DB_MIGRATION_PATH = "db/migration/";
+    public static final String DB_MIGRATION_PATH = "db/migration/success/";
 
     @Test
     public void should_get_file_path_from_resource() throws Exception {
@@ -47,7 +47,7 @@ public class FileUtilsTest {
     public static Object[][] fileProvider() {
         return new Object[][]{
                 {DB_MIGRATION_PATH + "V1.1__insert_users", "99a4aaf12e7505286afe2a5b074f7ebabd496f3ea8c4093116efd3d096c430a8"},
-                {DB_MIGRATION_PATH + "V1__create_index.n1ql", "bf0dae5d8fb638627eeabfb4b649d6100a8960da18859e12874e61063fbb16be"},
+                {DB_MIGRATION_PATH + "V1__create_index.n1ql", "eb4ed634d72ea0af9da0b990e0ebc81f6c09264109078e18d3d7b77cb64f28a5"},
                 {DB_MIGRATION_PATH + "V2__user.json", "22df7f8496c21a3e1f3fbd241592628ad6a07797ea5d501df8ab6c65c94dbb79"}
         };
     }

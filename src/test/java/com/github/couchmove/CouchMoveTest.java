@@ -106,6 +106,7 @@ public class CouchMoveTest {
     @Test
     public void should_execute_migrations() {
         CouchMove couchMove = spy(CouchMove.class);
+        couchMove.setDbService(dbServiceMock);
         ChangeLog executedChangeLog = ChangeLog.builder()
                 .version("1")
                 .order(1)
@@ -116,8 +117,8 @@ public class CouchMoveTest {
                 .version("2")
                 .type(DOCUMENTS)
                 .build();
-        doReturn(true).when(couchMove).executeMigration(changeLog);
-        couchMove.executeMigration(newArrayList(newArrayList(executedChangeLog, changeLog)));
+        doReturn(true).when(couchMove).doExecute(changeLog);
+        couchMove.executeMigration(newArrayList(executedChangeLog, changeLog));
         Assert.assertEquals((Integer) 2, changeLog.getOrder());
     }
 
@@ -128,7 +129,7 @@ public class CouchMoveTest {
                 .version("1")
                 .type(N1QL)
                 .build();
-        doReturn(false).when(couchMove).executeMigration(changeLog);
+        doReturn(false).when(couchMove).executeMigration(changeLog, 1);
         couchMove.executeMigration(newArrayList(changeLog));
     }
 
@@ -139,7 +140,7 @@ public class CouchMoveTest {
                 .description("description")
                 .type(DESIGN_DOC)
                 .build();
-        couchMove.executeMigration(changeLog);
+        couchMove.executeMigration(changeLog, 1);
         verify(dbServiceMock).save(changeLog);
         Assert.assertNotNull(changeLog.getTimestamp());
         Assert.assertNotNull(changeLog.getDuration());
@@ -154,7 +155,7 @@ public class CouchMoveTest {
                 .type(DOCUMENTS)
                 .build();
         doThrow(CouchMoveException.class).when(dbServiceMock).importDocuments(any());
-        couchMove.executeMigration(changeLog);
+        couchMove.executeMigration(changeLog, 1);
         verify(dbServiceMock).save(changeLog);
         Assert.assertNotNull(changeLog.getTimestamp());
         Assert.assertNotNull(changeLog.getDuration());

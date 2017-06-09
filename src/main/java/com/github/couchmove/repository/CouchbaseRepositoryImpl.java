@@ -5,6 +5,7 @@ import com.couchbase.client.deps.com.fasterxml.jackson.databind.ObjectMapper;
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.document.RawJsonDocument;
 import com.couchbase.client.java.document.json.JsonObject;
+import com.couchbase.client.java.error.DocumentDoesNotExistException;
 import com.couchbase.client.java.query.N1qlQuery;
 import com.couchbase.client.java.query.N1qlQueryResult;
 import com.couchbase.client.java.view.DesignDocument;
@@ -24,7 +25,7 @@ import static org.slf4j.LoggerFactory.getLogger;
  * Created by tayebchlyah on 27/05/2017.
  */
 // For tests
-@NoArgsConstructor(access = AccessLevel.PACKAGE,force = true)
+@NoArgsConstructor(access = AccessLevel.PACKAGE, force = true)
 @RequiredArgsConstructor
 public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements CouchbaseRepository<E> {
 
@@ -85,7 +86,11 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
 
     @Override
     public void delete(String id) {
-        bucket.remove(id);
+        try {
+            bucket.remove(id);
+        } catch (DocumentDoesNotExistException e) {
+            logger.warn("Trying to delete document that does not exist : '{}'", id);
+        }
     }
 
     @Override
