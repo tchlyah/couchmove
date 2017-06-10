@@ -23,7 +23,10 @@ import static com.github.couchmove.pojo.Type.DESIGN_DOC;
 import static com.github.couchmove.pojo.Type.N1QL;
 
 /**
- * Created by tayebchlyah on 30/05/2017.
+ * Service for fetching {@link ChangeLog}s from resource folder
+ *
+ * @author ctayeb
+ * Created on 30/05/2017
  */
 public class ChangeLogFileService {
 
@@ -33,10 +36,18 @@ public class ChangeLogFileService {
 
     private final File changeFolder;
 
+    /**
+     * @param changePath The resource path of the folder containing {@link ChangeLog}s
+     */
     public ChangeLogFileService(String changePath) {
         this.changeFolder = initializeFolder(changePath);
     }
 
+    /**
+     * Reads all the {@link ChangeLog}s contained in the Change Folder, ignoring unhandled files
+     *
+     * @return An ordered list of {@link ChangeLog}s by {@link ChangeLog#version}
+     */
     public List<ChangeLog> fetch() {
         logger.info("Fetching changeLogs from migration folder '{}'", changeFolder.getPath());
         SortedSet<ChangeLog> sortedChangeLogs = new TreeSet<>();
@@ -60,10 +71,24 @@ public class ChangeLogFileService {
         return Collections.unmodifiableList(new ArrayList<>(sortedChangeLogs));
     }
 
+    /**
+     * Read file content from a relative path from the Change Folder
+     *
+     * @param path relative path of the file to read
+     * @return content of the file
+     * @throws IOException if an I/O error occurs reading the file
+     */
     public String readFile(String path) throws IOException {
         return new String(Files.readAllBytes(resolve(path)));
     }
 
+    /**
+     * Read json files content from a relative directory from the Change Folder
+     *
+     * @param path relative path of the directory containing json files to read
+     * @return {@link Map} which keys represents the name (with extension), and values the content of read files
+     * @throws IOException if an I/O error occurs reading the files
+     */
     public Map<String, String> readDocuments(String path) throws IOException {
         return FileUtils.readFilesInDirectory(resolve(path).toFile(), JSON);
     }
@@ -89,6 +114,12 @@ public class ChangeLogFileService {
         return changeFolder.toPath().resolve(path);
     }
 
+    /**
+     * Determines the {@link Type} of the file from its type and extension
+     *
+     * @param file file to analyse
+     * @return {@link Type} of the {@link ChangeLog} file
+     */
     @NotNull
     static Type getChangeLogType(File file) {
         if (file.isDirectory()) {

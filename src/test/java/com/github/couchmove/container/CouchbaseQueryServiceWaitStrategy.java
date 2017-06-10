@@ -14,7 +14,8 @@ import java.util.concurrent.TimeUnit;
 import static org.rnorth.ducttape.unreliables.Unreliables.retryUntilSuccess;
 
 /**
- * Created by tayebchlyah on 06/06/2017.
+ * @author ctayeb
+ * Created on 06/06/2017
  */
 public class CouchbaseQueryServiceWaitStrategy extends GenericContainer.AbstractWaitStrategy {
 

@@ -20,7 +20,8 @@ import static com.github.couchmove.utils.FunctionUtils.not;
 import static com.github.couchmove.utils.TestUtils.getRandomString;
 
 /**
- * Created by tayebchlyah on 28/05/2017.
+ * @author ctayeb
+ * Created on 28/05/2017
  */
 public class CouchbaseRepositoryTest extends AbstractCouchbaseTest {
 
@@ -130,7 +131,7 @@ public class CouchbaseRepositoryTest extends AbstractCouchbaseTest {
         // When we execute the query
         repository.query(request);
 
-        // Then the index should be created
+        // Then the index should be Created
         List<IndexInfo> indexInfos = getBucket().bucketManager().listN1qlIndexes().stream()
                 .filter(not(IndexInfo::isPrimary))
                 .collect(Collectors.toList());

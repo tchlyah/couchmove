@@ -23,7 +23,8 @@ import static com.github.couchmove.utils.TestUtils.*;
 import static org.mockito.Mockito.when;
 
 /**
- * Created by tayebchlyah on 03/06/2017.
+ * @author ctayeb
+ * Created on 03/06/2017
  */
 @RunWith(MockitoJUnitRunner.class)
 public class ChangeLogDBServiceTest {

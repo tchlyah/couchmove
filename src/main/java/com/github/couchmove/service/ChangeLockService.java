@@ -14,7 +14,10 @@ import java.util.Date;
 import java.util.UUID;
 
 /**
- * Created by tayebchlyah on 28/05/2017.
+ * Service for acquiring a pessimistic lock of a Couchbase {@link Bucket}
+ *
+ * @author ctayeb
+ * Created on 27/05/2017
  */
 public class ChangeLockService {
 
@@ -30,6 +33,11 @@ public class ChangeLockService {
         this.repository = new CouchbaseRepositoryImpl<>(bucket, ChangeLock.class);
     }
 
+    /**
+     * Tries to acquire a pessimistic lock of Couchbase {@link Bucket}
+     *
+     * @return true if lock successfully acquired, false otherwise
+     */
     public boolean acquireLock() {
         logger.info("Trying to acquire bucket '{}' lock...", repository.getBucketName());
         // Verify if there is any lock on database
@@ -59,6 +67,11 @@ public class ChangeLockService {
         return true;
     }
 
+    /**
+     * Check if the Couchbase {@link Bucket} is actually locked by this instance
+     *
+     * @return true if the current instance holds the lock, false otherwise.
+     */
     public boolean isLockAcquired() {
         ChangeLock lock = repository.findOne(LOCK_ID);
         if (lock == null) {
@@ -74,10 +87,11 @@ public class ChangeLockService {
         return true;
     }
 
+    /**
+     * Releases the pessimistic lock of Couchbase {@link Bucket}
+     */
     public void releaseLock() {
         logger.info("Release lock");
         repository.delete(LOCK_ID);
     }
-
-    //</editor-fold>
 }

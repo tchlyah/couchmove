@@ -23,7 +23,8 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 
 /**
- * Created by tayebchlyah on 04/06/2017.
+ * @author ctayeb
+ * Created on 04/06/2017
  */
 @RunWith(MockitoJUnitRunner.class)
 public class CouchMoveTest {

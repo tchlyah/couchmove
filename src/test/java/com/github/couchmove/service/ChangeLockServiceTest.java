@@ -5,7 +5,8 @@ import org.junit.Assert;
 import org.junit.Test;
 
 /**
- * Created by tayebchlyah on 29/05/2017.
+ * @author ctayeb
+ * Created on 29/05/2017
  */
 public class ChangeLockServiceTest extends AbstractCouchbaseTest {
 

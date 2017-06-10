@@ -18,7 +18,8 @@ import static com.github.couchmove.pojo.Type.N1QL;
 import static com.github.couchmove.utils.TestUtils.getRandomString;
 
 /**
- * Created by tayebchlyah on 02/06/2017.
+ * @author ctayeb
+ * Created on 02/06/2017
  */
 @RunWith(DataProviderRunner.class)
 public class FileUtilsTest {

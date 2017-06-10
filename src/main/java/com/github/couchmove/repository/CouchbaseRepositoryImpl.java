@@ -22,7 +22,8 @@ import java.io.IOException;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
- * Created by tayebchlyah on 27/05/2017.
+ * @author ctayeb
+ * Created on 27/05/2017
  */
 // For tests
 @NoArgsConstructor(access = AccessLevel.PACKAGE, force = true)
@@ -38,13 +39,7 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
 
     private final Class<E> entityClass;
 
-    /**
-     * Save the entity on couchbase
-     *
-     * @param id     document id
-     * @param entity entity to save
-     * @return saved entity
-     */
+
     @Override
     public E save(String id, E entity) {
         try {
@@ -56,17 +51,6 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
         }
     }
 
-    /**
-     * If the {@link CouchbaseEntity#cas} of the entity is set, tries to replace the document with a Check And Set operation (Optimistic locking)
-     * </p>
-     * otherwise it insert the document
-     *
-     * @param id     document id
-     * @param entity entity to save
-     * @return saved entity
-     * @throws com.couchbase.client.java.error.CASMismatchException           if the cas of entity is different from existing one
-     * @throws com.couchbase.client.java.error.DocumentAlreadyExistsException if the cas is not set and the document exists on couchbase
-     */
     @Override
     public E checkAndSave(String id, E entity) {
         try {

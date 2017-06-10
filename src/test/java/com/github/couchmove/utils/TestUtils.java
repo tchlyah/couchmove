@@ -12,7 +12,8 @@ import java.util.UUID;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Created by tayebchlyah on 01/06/2017.
+ * @author ctayeb
+ * Created on 01/06/2017
  */
 public class TestUtils {
 

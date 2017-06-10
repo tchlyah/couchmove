@@ -8,12 +8,16 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 /**
- * Created by tayebchlyah on 04/06/2017.
+ * @author ctayeb
+ * Created on 04/06/2017
  */
 public class Utils {
 
     private static final Logger logger = LoggerFactory.getLogger(Utils.class);
 
+    /**
+     * Get the username for the current OS user
+     */
     @Getter(lazy = true)
     private static final String username = initializeUserName();
 

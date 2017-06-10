@@ -21,16 +21,17 @@ import java.util.stream.Collectors;
 import static org.apache.commons.io.IOUtils.toByteArray;
 
 /**
- * Created by tayebchlyah on 02/06/2017.
+ * @author ctayeb
+ * Created on 02/06/2017
  */
 public class FileUtils {
 
     /**
-     * Returns Path of a resource in classpath no matter whether in a jar or in a folder
+     * Returns Path of a resource in classpath no matter whether it is in a jar or in absolute or relative folder
      *
      * @param resource path
      * @return Path of a resource
-     * @throws IOException
+     * @throws IOException if an I/O error occurs
      */
     public static Path getPathFromResource(String resource) throws IOException {
         File file = new File(resource);
@@ -99,6 +100,14 @@ public class FileUtils {
         }
     }
 
+    /**
+     * Read files content from a (@link File}
+     *
+     * @param file       The directory containing files to read
+     * @param extensions The extensions of the files to read
+     * @return {@link Map} which keys represents the name (with extension), and values the content of read files
+     * @throws IOException if an I/O error occurs reading the files
+     */
     public static Map<String, String> readFilesInDirectory(@NotNull File file, String... extensions) throws IOException {
         if (file == null || !file.exists()) {
             throw new IllegalArgumentException("File is null or doesn't exists");

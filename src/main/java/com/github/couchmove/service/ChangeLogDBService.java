@@ -1,6 +1,8 @@
 package com.github.couchmove.service;
 
 import com.couchbase.client.java.Bucket;
+import com.couchbase.client.java.query.N1qlQuery;
+import com.couchbase.client.java.view.DesignDocument;
 import com.github.couchmove.exception.CouchMoveException;
 import com.github.couchmove.pojo.ChangeLog;
 import com.github.couchmove.repository.CouchbaseRepository;
@@ -12,10 +14,11 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static com.github.couchmove.utils.FunctionUtils.not;
-
 /**
- * Created by tayebchlyah on 03/06/2017.
+ * Service for fetching and executing {@link ChangeLog}s
+ *
+ * @author ctayeb
+ * Created on 03/06/2017
  */
 public class ChangeLogDBService {
 
@@ -76,27 +79,61 @@ public class ChangeLogDBService {
         return Collections.unmodifiableList(result);
     }
 
+    /**
+     * Saves a {@link ChangeLog} in Couchbase {@link Bucket} using an ID composed by :
+     * <p>
+     * {@value PREFIX_ID} + {@link ChangeLog#version}
+     *
+     * @param changeLog The ChangeLog to save
+     * @return {@link ChangeLog} entity with CAS (Check And Swap, for optimistic concurrency) set
+     */
     public ChangeLog save(ChangeLog changeLog) {
         return repository.save(PREFIX_ID + changeLog.getVersion(), changeLog);
     }
 
+    /**
+     * Inserts a {@link DesignDocument} into production
+     *
+     * @param name    name of the {@link DesignDocument} to insert
+     * @param content the content of the {@link DesignDocument} to insert
+     */
     public void importDesignDoc(String name, String content) {
         logger.info("Inserting Design Document '{}'...", name);
         repository.importDesignDoc(name, content);
     }
 
+    /**
+     * Queries Couchbase {@link Bucket} with multiple {@link N1qlQuery}
+     *
+     * @param content containing multiple {@link N1qlQuery}
+     */
     public void executeN1ql(String content) {
         List<String> requests = extractRequests(content);
         logger.info("Executing {} n1ql requests", requests.size());
         requests.forEach(repository::query);
     }
 
+    /**
+     * Save multiple json documents to Couchbase {@link Bucket} identified by the keys of the map
+     *
+     * @param documents a {@link Map} which keys represent a json document to be inserted, and the values the unique ID of the document
+     */
     public void importDocuments(Map<String, String> documents) {
         logger.info("Importing {} documents", documents.size());
         documents.forEach((fileName, content) ->
                 repository.save(FilenameUtils.getBaseName(fileName), content));
     }
 
+    /**
+     * Extract multiple requests, separated by ';' ignoring :
+     * <ul>
+     * <li> multi-line (\/* ... *\/) comments
+     * <li> unique line (-- ...) comments
+     * </ul>
+     *
+     * @param content content from where the requests are extracted
+     * @return multiple requests
+     */
     static List<String> extractRequests(String content) {
         String commentsRemoved = content.replaceAll("((?:--[^\\n]*)|(?s)(?:\\/\\*.*?\\*\\/))", "")
                 .trim();

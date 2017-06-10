@@ -15,7 +15,8 @@ import java.util.stream.Stream;
 import static com.github.couchmove.utils.TestUtils.getRandomString;
 
 /**
- * Created by tayebchlyah on 01/06/2017.
+ * @author ctayeb
+ * Created on 01/06/2017
  */
 public class ChangeLogFileServiceTest {
 

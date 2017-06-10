@@ -11,7 +11,7 @@ import org.junit.After;
 import org.slf4j.LoggerFactory;
 
 /**
- * Created by tayebchlyah on 28/05/2017.
+ * @author ctayeb
  */
 public abstract class AbstractCouchbaseTest {
     public static final String CLUSTER_USER = "Administrator";

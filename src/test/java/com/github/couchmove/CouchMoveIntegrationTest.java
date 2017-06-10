@@ -27,7 +27,8 @@ import static com.github.couchmove.utils.TestUtils.assertThrows;
 import static org.junit.Assert.*;
 
 /**
- * Created by tayebchlyah on 05/06/2017.
+ * @author ctayeb
+ * Created on 05/06/2017
  */
 public class CouchMoveIntegrationTest extends AbstractCouchbaseTest {
 

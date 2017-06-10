@@ -1,8 +1,13 @@
 package com.github.couchmove;
 
 import com.couchbase.client.java.Bucket;
+import com.couchbase.client.java.query.N1qlQuery;
+import com.couchbase.client.java.view.DesignDocument;
 import com.github.couchmove.exception.CouchMoveException;
 import com.github.couchmove.pojo.ChangeLog;
+import com.github.couchmove.pojo.Status;
+import com.github.couchmove.pojo.Type;
+import com.github.couchmove.pojo.Type.Constants;
 import com.github.couchmove.service.ChangeLockService;
 import com.github.couchmove.service.ChangeLogDBService;
 import com.github.couchmove.service.ChangeLogFileService;
@@ -23,7 +28,10 @@ import java.util.concurrent.TimeUnit;
 import static com.github.couchmove.pojo.Status.*;
 
 /**
- * Created by tayebchlyah on 03/06/2017.
+ * Couchmove Runner
+ *
+ * @author ctayeb
+ * Created on 03/06/2017
  */
 @NoArgsConstructor(access = AccessLevel.PACKAGE)
 public class CouchMove {
@@ -41,10 +49,21 @@ public class CouchMove {
 
     private ChangeLogFileService fileService;
 
+    /**
+     * Initialize a {@link CouchMove} instance with default migration path : {@value DEFAULT_MIGRATION_PATH}
+     *
+     * @param bucket Couchbase {@link Bucket} to execute the migrations on
+     */
     public CouchMove(Bucket bucket) {
         this(bucket, DEFAULT_MIGRATION_PATH);
     }
 
+    /**
+     * Initialize a {@link CouchMove} instance
+     *
+     * @param bucket     Couchbase {@link Bucket} to execute the migrations on
+     * @param changePath absolute or relative path of the migration folder containing {@link ChangeLog}
+     */
     public CouchMove(Bucket bucket, String changePath) {
         logger.info("Connected to bucket '{}'", bucketName = bucket.name());
         lockService = new ChangeLockService(bucket);
@@ -52,6 +71,15 @@ public class CouchMove {
         fileService = new ChangeLogFileService(changePath);
     }
 
+    /**
+     * Launch the migration process :
+     * <ol>
+     *     <li> Tries to acquire Couchbase {@link Bucket} lock
+     *     <li> Fetch all {@link ChangeLog}s from migration folder
+     *     <li> Fetch corresponding {@link ChangeLog}s from {@link Bucket}
+     *     <li> Execute found {@link ChangeLog}s : {@link CouchMove#executeMigration(List)}
+     * </ol>
+     */
     public void migrate() {
         logger.info("Begin bucket '{}' migration", bucketName);
         try {
@@ -82,6 +110,17 @@ public class CouchMove {
         logger.info("CouchMove has finished his job");
     }
 
+    /**
+     * Execute the {@link ChangeLog}s
+     * <ul>
+     *      <li> If {@link ChangeLog#version} is lower than last executed one, ignore it and mark it as {@link Status#SKIPPED}
+     *      <li> If an {@link Status#EXECUTED} ChangeLog was modified, fail
+     *      <li> If an {@link Status#EXECUTED} ChangeLog description was modified, update it
+     *      <li> Otherwise apply the ChangeLog : {@link CouchMove#executeMigration(ChangeLog, int)}
+     *  </ul>
+     *
+     * @param changeLogs to execute
+     */
     void executeMigration(List<ChangeLog> changeLogs) {
         logger.info("Executing migration scripts...");
         int migrationCount = 0;
@@ -138,6 +177,17 @@ public class CouchMove {
         }
     }
 
+    /**
+     * Execute the migration {@link ChangeLog}, and save it to Couchbase {@link Bucket}
+     * <ul>
+     *     <li> If the execution was successful, set the order and mark it as {@link Status#EXECUTED}
+     *     <li> Otherwise, mark it as {@link Status#FAILED}
+     * </ul>
+     *
+     * @param changeLog {@link ChangeLog} to execute
+     * @param order the order to set if the execution was successful
+     * @return true if the execution was successful, false otherwise
+     */
     boolean executeMigration(ChangeLog changeLog, int order) {
         logger.info("Executing ChangeLog '{}'", changeLog.getVersion());
         Stopwatch sw = Stopwatch.createStarted();
@@ -156,6 +206,16 @@ public class CouchMove {
         return changeLog.getStatus() == EXECUTED;
     }
 
+    /**
+     * Applies the {@link ChangeLog} according to it's {@link ChangeLog#type} :
+     * <ul>
+     *     <li> {@link Type#DOCUMENTS} : Imports all {@value Constants#JSON} documents contained in the folder
+     *     <li> {@link Type#N1QL} : Execute all {@link N1qlQuery} contained in the {@value Constants#N1QL} file
+     *     <li> {@link Type#DESIGN_DOC} : Imports {@link DesignDocument} contained in the {@value Constants#JSON} document
+     * </ul>
+     * @param changeLog {@link ChangeLog} to apply
+     * @return true if the execution was successful, false otherwise
+     */
     boolean doExecute(ChangeLog changeLog) {
         try {
             switch (changeLog.getType()) {
