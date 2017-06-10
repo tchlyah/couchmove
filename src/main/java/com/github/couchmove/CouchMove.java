@@ -6,6 +6,7 @@ import com.github.couchmove.pojo.ChangeLog;
 import com.github.couchmove.service.ChangeLockService;
 import com.github.couchmove.service.ChangeLogDBService;
 import com.github.couchmove.service.ChangeLogFileService;
+import com.github.couchmove.utils.Utils;
 import com.google.common.base.Stopwatch;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -20,7 +21,6 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import static com.github.couchmove.pojo.Status.*;
-import static com.github.couchmove.utils.Utils.getUsername;
 
 /**
  * Created by tayebchlyah on 03/06/2017.
@@ -142,7 +142,7 @@ public class CouchMove {
         logger.info("Executing ChangeLog '{}'", changeLog.getVersion());
         Stopwatch sw = Stopwatch.createStarted();
         changeLog.setTimestamp(new Date());
-        changeLog.setRunner(getUsername());
+        changeLog.setRunner(Utils.getUsername());
         if (doExecute(changeLog)) {
             logger.info("ChangeLog '{}' successfully executed", changeLog.getVersion());
             changeLog.setOrder(order);
