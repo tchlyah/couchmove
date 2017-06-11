@@ -38,6 +38,7 @@ import java.util.List;
  */
 public class CouchbaseContainer<SELF extends CouchbaseContainer<SELF>> extends GenericContainer<SELF> {
 
+    public static final int BUCKET_PORT = 11211;
     private String memoryQuota = "400";
 
     private String indexMemoryQuota = "400";
@@ -85,15 +86,14 @@ public class CouchbaseContainer<SELF extends CouchbaseContainer<SELF>> extends G
 
     @Override
     protected void configure() {
-        addFixedExposedPort(8091, 8091);
+        // Configurable ports
+        addExposedPorts(11210, 11207, 8091, 18091, BUCKET_PORT);
+
+        // Non configurable ports
         addFixedExposedPort(8092, 8092);
         addFixedExposedPort(8093, 8093);
         addFixedExposedPort(8094, 8094);
         addFixedExposedPort(8095, 8095);
-        addFixedExposedPort(11207, 11207);
-        addFixedExposedPort(11210, 11210);
-        addFixedExposedPort(11211, 11211);
-        addFixedExposedPort(18091, 18091);
         addFixedExposedPort(18092, 18092);
         addFixedExposedPort(18093, 18093);
         setWaitStrategy(new HttpWaitStrategy().forPath("/ui/index.html#/"));

@@ -40,15 +40,16 @@ public abstract class AbstractCouchbaseTest {
                 .withQuery(true)
                 .withPrimaryIndex(false)
                 .withClusterUsername(CLUSTER_USER)
-                .withClusterPassword(CLUSTER_PASSWORD)
-                .withNewBucket(DefaultBucketSettings.builder()
-                        .enableFlush(true)
-                        .name(DEFAULT_BUCKET)
-                        .quota(100)
-                        .replicas(0)
-                        .type(BucketType.COUCHBASE)
-                        .build());
+                .withClusterPassword(CLUSTER_PASSWORD);
         couchbaseContainer.start();
+        couchbaseContainer.createBucket(DefaultBucketSettings.builder()
+                .enableFlush(true)
+                .name(DEFAULT_BUCKET)
+                .quota(100)
+                .replicas(0)
+                .port(couchbaseContainer.getMappedPort(CouchbaseContainer.BUCKET_PORT))
+                .type(BucketType.COUCHBASE)
+                .build(), false);
         return couchbaseContainer;
     }
 
