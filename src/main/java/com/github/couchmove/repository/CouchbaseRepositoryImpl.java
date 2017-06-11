@@ -1,13 +1,21 @@
 package com.github.couchmove.repository;
 
+import com.couchbase.client.core.BackpressureException;
+import com.couchbase.client.core.RequestCancelledException;
+import com.couchbase.client.core.time.Delay;
 import com.couchbase.client.deps.com.fasterxml.jackson.core.JsonProcessingException;
 import com.couchbase.client.deps.com.fasterxml.jackson.databind.ObjectMapper;
+import com.couchbase.client.java.AsyncBucket;
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.document.RawJsonDocument;
 import com.couchbase.client.java.document.json.JsonObject;
 import com.couchbase.client.java.error.DocumentDoesNotExistException;
+import com.couchbase.client.java.error.TemporaryFailureException;
+import com.couchbase.client.java.query.AsyncN1qlQueryResult;
+import com.couchbase.client.java.query.N1qlParams;
 import com.couchbase.client.java.query.N1qlQuery;
-import com.couchbase.client.java.query.N1qlQueryResult;
+import com.couchbase.client.java.util.retry.RetryBuilder;
+import com.couchbase.client.java.util.retry.RetryWhenFunction;
 import com.couchbase.client.java.view.DesignDocument;
 import com.github.couchmove.exception.CouchMoveException;
 import com.github.couchmove.pojo.CouchbaseEntity;
@@ -16,14 +24,19 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
+import rx.Observable;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
+import static com.couchbase.client.java.query.consistency.ScanConsistency.STATEMENT_PLUS;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * @author ctayeb
- * Created on 27/05/2017
+ *         Created on 27/05/2017
  */
 // For tests
 @NoArgsConstructor(access = AccessLevel.PACKAGE, force = true)
@@ -39,11 +52,14 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
 
     private final Class<E> entityClass;
 
+    @Getter(lazy = true, value = AccessLevel.PRIVATE)
+    private static final RetryWhenFunction retryStrategy = retryStrategy();
 
     @Override
     public E save(String id, E entity) {
         try {
-            RawJsonDocument insertedDocument = bucket.upsert(RawJsonDocument.create(id, getJsonMapper().writeValueAsString(entity)));
+            String json = getJsonMapper().writeValueAsString(entity);
+            RawJsonDocument insertedDocument = runAsync(bucket -> bucket.upsert(RawJsonDocument.create(id, json)));
             entity.setCas(insertedDocument.cas());
             return entity;
         } catch (JsonProcessingException e) {
@@ -56,11 +72,12 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
         try {
             String content = getJsonMapper().writeValueAsString(entity);
             RawJsonDocument insertedDocument;
-            if (entity.getCas() != null) {
-                insertedDocument = bucket.replace(RawJsonDocument.create(id, content, entity.getCas()));
-            } else {
-                insertedDocument = bucket.insert(RawJsonDocument.create(id, content));
-            }
+            insertedDocument = runAsync(bucket -> {
+                if (entity.getCas() != null) {
+                    return bucket.replace(RawJsonDocument.create(id, content, entity.getCas()));
+                }
+                return bucket.insert(RawJsonDocument.create(id, content));
+            });
             entity.setCas(insertedDocument.cas());
             return entity;
         } catch (JsonProcessingException e) {
@@ -71,7 +88,7 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
     @Override
     public void delete(String id) {
         try {
-            bucket.remove(id);
+            runAsync(bucket -> bucket.remove(id));
         } catch (DocumentDoesNotExistException e) {
             logger.warn("Trying to delete document that does not exist : '{}'", id);
         }
@@ -79,7 +96,7 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
 
     @Override
     public E findOne(String id) {
-        RawJsonDocument document = bucket.get(id, RawJsonDocument.class);
+        RawJsonDocument document = runAsync(bucket -> bucket.get(id, RawJsonDocument.class));
         if (document == null) {
             return null;
         }
@@ -94,7 +111,7 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
 
     @Override
     public void save(String id, String jsonContent) {
-        bucket.upsert(RawJsonDocument.create(id, jsonContent));
+        runAsync(bucket -> bucket.upsert(RawJsonDocument.create(id, jsonContent)));
     }
 
     @Override
@@ -106,13 +123,15 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
     public void query(String n1qlStatement) {
         logger.debug("Executing n1ql request : {}", n1qlStatement);
         try {
-            N1qlQueryResult result = bucket.query(N1qlQuery.simple(n1qlStatement));
+            AsyncN1qlQueryResult result = runAsync(bucket -> bucket
+                    .query(N1qlQuery.simple(n1qlStatement,
+                            N1qlParams.build().consistency(STATEMENT_PLUS))));
             if (!result.parseSuccess()) {
                 logger.info("Invalid N1QL request '{}'", n1qlStatement);
                 throw new CouchMoveException("Invalid n1ql request");
             }
-            if (!result.finalSuccess()) {
-                logger.error("Unable to execute n1ql request '{}'. Status : {}, errors : ", n1qlStatement, result.status(), result.errors());
+            if (!single(result.finalSuccess())) {
+                logger.error("Unable to execute n1ql request '{}'. Status : {}, errors : ", n1qlStatement, single(result.status()), single(result.errors()));
                 throw new CouchMoveException("Unable to execute n1ql request");
             }
         } catch (Exception e) {
@@ -123,5 +142,24 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
     @Override
     public String getBucketName() {
         return bucket.name();
+    }
+
+    @Nullable
+    private <T> T single(Observable<T> observable) {
+        return observable.toBlocking().singleOrDefault(null);
+    }
+
+    private <R> R runAsync(Function<AsyncBucket, Observable<R>> function) {
+        return single(function.apply(bucket.async())
+                .retryWhen(getRetryStrategy()));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static RetryWhenFunction retryStrategy() {
+        return RetryBuilder
+                .anyOf(TemporaryFailureException.class, RequestCancelledException.class, BackpressureException.class)
+                .delay(Delay.exponential(TimeUnit.MILLISECONDS, 100))
+                .max(3)
+                .build();
     }
 }
