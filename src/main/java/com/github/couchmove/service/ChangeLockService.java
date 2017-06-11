@@ -3,6 +3,7 @@ package com.github.couchmove.service;
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.error.CASMismatchException;
 import com.couchbase.client.java.error.DocumentAlreadyExistsException;
+import com.github.couchmove.exception.CouchMoveException;
 import com.github.couchmove.pojo.ChangeLock;
 import com.github.couchmove.repository.CouchbaseRepository;
 import com.github.couchmove.repository.CouchbaseRepositoryImpl;
@@ -17,7 +18,7 @@ import java.util.UUID;
  * Service for acquiring a pessimistic lock of a Couchbase {@link Bucket}
  *
  * @author ctayeb
- * Created on 27/05/2017
+ *         Created on 27/05/2017
  */
 public class ChangeLockService {
 
@@ -91,6 +92,17 @@ public class ChangeLockService {
      * Releases the pessimistic lock of Couchbase {@link Bucket}
      */
     public void releaseLock() {
+        if (isLockAcquired()) {
+            forceReleaseLock();
+        } else {
+            throw new CouchMoveException("Unable to release lock acquired by an other process");
+        }
+    }
+
+    /**
+     * Force release pessimistic lock even if the current instance doesn't hold it
+     */
+    public void forceReleaseLock() {
         logger.info("Release lock");
         repository.delete(LOCK_ID);
     }
