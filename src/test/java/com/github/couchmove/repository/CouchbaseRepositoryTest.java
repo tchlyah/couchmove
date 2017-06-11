@@ -18,12 +18,15 @@ import java.util.stream.Collectors;
 
 import static com.github.couchmove.utils.FunctionUtils.not;
 import static com.github.couchmove.utils.TestUtils.getRandomString;
+import static java.lang.String.format;
 
 /**
  * @author ctayeb
  * Created on 28/05/2017
  */
 public class CouchbaseRepositoryTest extends AbstractCouchbaseTest {
+
+    public static final String INDEX_NAME = "name";
 
     private static CouchbaseRepository<ChangeLog> repository;
 
@@ -126,7 +129,7 @@ public class CouchbaseRepositoryTest extends AbstractCouchbaseTest {
     @Test
     public void should_execute_n1ql() {
         // Given a primary index request
-        String request = String.format("CREATE INDEX `%s` ON `%s`(`%s`)", "name", getBucket().name(), "name");
+        String request = format("CREATE INDEX `%s` ON `%s`(`%s`)", INDEX_NAME, getBucket().name(), INDEX_NAME);
 
         // When we execute the query
         repository.query(request);
@@ -137,8 +140,8 @@ public class CouchbaseRepositoryTest extends AbstractCouchbaseTest {
                 .collect(Collectors.toList());
         Assert.assertEquals(1, indexInfos.size());
         IndexInfo indexInfo = indexInfos.get(0);
-        Assert.assertEquals("name", indexInfo.name());
-        Assert.assertEquals("name", indexInfo.indexKey().get(0));
+        Assert.assertEquals(INDEX_NAME, indexInfo.name());
+        Assert.assertEquals(format("`%s`", INDEX_NAME), indexInfo.indexKey().get(0));
     }
 
     @Test
