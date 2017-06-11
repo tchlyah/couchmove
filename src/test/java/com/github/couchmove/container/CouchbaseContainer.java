@@ -22,6 +22,7 @@ import com.couchbase.client.java.cluster.BucketSettings;
 import com.couchbase.client.java.env.CouchbaseEnvironment;
 import com.couchbase.client.java.env.DefaultCouchbaseEnvironment;
 import com.couchbase.client.java.query.Index;
+import lombok.Getter;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.HttpWaitStrategy;
 
@@ -47,21 +48,24 @@ public class CouchbaseContainer<SELF extends CouchbaseContainer<SELF>> extends G
 
     private String clusterPassword = "password";
 
-    private Boolean keyValue = true;
+    private boolean keyValue = true;
 
-    private Boolean query = true;
+    @Getter
+    private boolean query = true;
 
-    private Boolean index = true;
+    @Getter
+    private boolean index = true;
 
-    private Boolean primaryIndex = true;
+    @Getter
+    private boolean primaryIndex = true;
 
-    private Boolean fts = true;
+    private boolean fts = true;
 
-    private Boolean beerSample = false;
+    private boolean beerSample = false;
 
-    private Boolean travelSample = false;
+    private boolean travelSample = false;
 
-    private Boolean gamesIMSample = false;
+    private boolean gamesIMSample = false;
 
     private CouchbaseEnvironment couchbaseEnvironment;
 

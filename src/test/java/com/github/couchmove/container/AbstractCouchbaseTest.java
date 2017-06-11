@@ -6,6 +6,9 @@ import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.CouchbaseCluster;
 import com.couchbase.client.java.bucket.BucketType;
 import com.couchbase.client.java.cluster.DefaultBucketSettings;
+import com.couchbase.client.java.query.N1qlParams;
+import com.couchbase.client.java.query.N1qlQuery;
+import com.couchbase.client.java.query.consistency.ScanConsistency;
 import lombok.Getter;
 import org.junit.After;
 import org.slf4j.LoggerFactory;
@@ -30,7 +33,13 @@ public abstract class AbstractCouchbaseTest {
 
     @After
     public void clear() {
-        getBucket().bucketManager().flush();
+        if (getCouchbaseContainer().isIndex() && getCouchbaseContainer().isQuery() && getCouchbaseContainer().isPrimaryIndex()) {
+            getBucket().query(
+                    N1qlQuery.simple(String.format("DELETE FROM `%s`", getBucket().name()),
+                            N1qlParams.build().consistency(ScanConsistency.STATEMENT_PLUS)));
+        } else {
+            getBucket().bucketManager().flush();
+        }
     }
 
     private static CouchbaseContainer initCouchbaseContainer() {
@@ -38,7 +47,7 @@ public abstract class AbstractCouchbaseTest {
                 .withFTS(false)
                 .withIndex(true)
                 .withQuery(true)
-                .withPrimaryIndex(false)
+                .withPrimaryIndex(true)
                 .withClusterUsername(CLUSTER_USER)
                 .withClusterPassword(CLUSTER_PASSWORD);
         couchbaseContainer.start();
@@ -49,7 +58,7 @@ public abstract class AbstractCouchbaseTest {
                 .replicas(0)
                 .port(couchbaseContainer.getMappedPort(CouchbaseContainer.BUCKET_PORT))
                 .type(BucketType.COUCHBASE)
-                .build(), false);
+                .build(), couchbaseContainer.isPrimaryIndex());
         return couchbaseContainer;
     }
 
