@@ -16,13 +16,12 @@ import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
 
-import static com.github.couchmove.utils.FunctionUtils.not;
 import static com.github.couchmove.utils.TestUtils.getRandomString;
 import static java.lang.String.format;
 
 /**
  * @author ctayeb
- * Created on 28/05/2017
+ *         Created on 28/05/2017
  */
 public class CouchbaseRepositoryTest extends AbstractCouchbaseTest {
 
@@ -136,7 +135,7 @@ public class CouchbaseRepositoryTest extends AbstractCouchbaseTest {
 
         // Then the index should be Created
         List<IndexInfo> indexInfos = getBucket().bucketManager().listN1qlIndexes().stream()
-                .filter(not(IndexInfo::isPrimary))
+                .filter(indexInfo -> indexInfo.name().equals(INDEX_NAME))
                 .collect(Collectors.toList());
         Assert.assertEquals(1, indexInfos.size());
         IndexInfo indexInfo = indexInfos.get(0);
