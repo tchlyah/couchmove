@@ -4,3 +4,22 @@ language: java
 
 services:
   - docker
+
+addons:
+  sonarqube:
+    organization: "differentway-github"
+    token:
+      secure: "fnzS5t/buOCMWV5xx8sGOcPG+6P3LZwFuyOjOI9efm8s6uaYc2dHaKz9A45W2FB6O74pCohO8hVOh+C610fdnlES4JZ3kEy0V4/NWB9jun6w0dT+kPFRCUPmcyrS1zVZvEtlzuy2dUSPUgKfWQKnufZMex1VxghJge022+bGKbxsSYCcn0/EkOnHKN3hcP/WtjgfMQ7NrGrR+nGzZIblQRDL2bLyhx7skI7aVyo4qv93GyFGk5dIqmJtXlh+p8ylzImrJnM+V74NbRQe+YkgYZbH1VNaAzhCiSCRc8YltrAyJXJ1kLS778rIaQptLu2kn3wsZbC1dgGikg0rhy++on/cMvYWPo8LhQO7hGq31pTIblXI3+l0aU+FrKCXbpofIxbXwzBmZUOLa+StfnB9ANvsC9sn2RZ0A73U7lo/4jGY5EmjjyCze7TcyDonySyA/BrmwvDgnxKXrkAcI5jsY4bK+3Zy8pZkCYhoqilTwMsvs54m5skmLA3qv6l4tdmtNRgZD3EUnNutkjpp86gbrMa6d4k0/b2pxSjnK+MhQWKcpgXbH+Z935gTVTUcWxslu+kPXOhuH2uuiScOCCc0O/R7kPjVbFWakdjylOLFubaGKi9PmCyoYfiAcjfhFGoD7t6pXWjQdo3aRSp1d20qnioKi/c0w66hVQImiSU77Dw="
+      branches:
+       - master
+       - develop
+
+script:
+  # JaCoCo is used to have code coverage, the agent has to be activated
+  - mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent package sonar:sonar
+
+cache:
+  directories:
+    - '$HOME/.m2/repository'
+    - '$HOME/.sonar/cache'
+
