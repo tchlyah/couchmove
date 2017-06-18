@@ -1,19 +1,21 @@
 package com.github.couchmove.pojo;
 
 import com.couchbase.client.java.Bucket;
-import lombok.Builder;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.*;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Date;
+
+import static lombok.AccessLevel.PRIVATE;
 
 /**
  * a {@link CouchbaseEntity} representing a change in Couchbase {@link Bucket}
  *
  * @author ctayeb
- * Created on 27/05/2017
+ *         Created on 27/05/2017
  */
+@AllArgsConstructor
+@NoArgsConstructor(access = PRIVATE)
 @EqualsAndHashCode(callSuper = false)
 @Builder(toBuilder = true)
 @Data
