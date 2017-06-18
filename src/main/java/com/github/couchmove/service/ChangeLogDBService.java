@@ -3,7 +3,7 @@ package com.github.couchmove.service;
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.query.N1qlQuery;
 import com.couchbase.client.java.view.DesignDocument;
-import com.github.couchmove.exception.CouchMoveException;
+import com.github.couchmove.exception.CouchmoveException;
 import com.github.couchmove.pojo.ChangeLog;
 import com.github.couchmove.repository.CouchbaseRepository;
 import com.github.couchmove.repository.CouchbaseRepositoryImpl;
@@ -45,7 +45,7 @@ public class ChangeLogDBService {
      *
      * @param changeLogs to load from database
      * @return database version of changeLogs
-     * @throws CouchMoveException if checksum doesn't match
+     * @throws CouchmoveException if checksum doesn't match
      */
     public List<ChangeLog> fetchAndCompare(List<ChangeLog> changeLogs) {
         logger.info("Fetching changeLogs from bucket '{}'", repository.getBucketName());
@@ -64,7 +64,7 @@ public class ChangeLogDBService {
                 dbChangeLog.setCas(null);
             } else if (!dbChangeLog.getChecksum().equals(changeLog.getChecksum())) {
                 logger.error("ChangeLog version '{}' checksum doesn't match, please verify if the script '{}' content was modified", changeLog.getVersion(), changeLog.getScript());
-                throw new CouchMoveException("ChangeLog checksum doesn't match");
+                throw new CouchmoveException("ChangeLog checksum doesn't match");
             }
             if (!dbChangeLog.getDescription().equals(changeLog.getDescription())) {
                 logger.warn("ChangeLog version '{}' description updated", changeLog.getDescription());

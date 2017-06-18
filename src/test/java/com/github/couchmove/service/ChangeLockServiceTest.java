@@ -1,7 +1,7 @@
 package com.github.couchmove.service;
 
 import com.github.couchmove.container.AbstractCouchbaseTest;
-import com.github.couchmove.exception.CouchMoveException;
+import com.github.couchmove.exception.CouchmoveException;
 import org.junit.Test;
 
 import static com.github.couchmove.utils.TestUtils.assertThrows;
@@ -60,7 +60,7 @@ public class ChangeLockServiceTest extends AbstractCouchbaseTest {
         ChangeLockService changeLockService2 = new ChangeLockService(getBucket());
 
         // Then it should fails
-        assertThrows(changeLockService2::releaseLock, CouchMoveException.class);
+        assertThrows(changeLockService2::releaseLock, CouchmoveException.class);
 
         // When an other process force release the lock
         changeLockService2.forceReleaseLock();

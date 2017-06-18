@@ -1,6 +1,6 @@
 package com.github.couchmove.utils;
 
-import com.github.couchmove.exception.CouchMoveException;
+import com.github.couchmove.exception.CouchmoveException;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.jetbrains.annotations.NotNull;
@@ -77,7 +77,7 @@ public class FileUtils {
      */
     public static String calculateChecksum(@NotNull File file, String... extensions) {
         if (file == null || !file.exists()) {
-            throw new CouchMoveException("File is null or doesn't exists");
+            throw new CouchmoveException("File is null or doesn't exists");
         }
         if (file.isDirectory()) {
             //noinspection ConstantConditions
@@ -96,7 +96,7 @@ public class FileUtils {
         try {
             return DigestUtils.sha256Hex(toByteArray(file.toURI()));
         } catch (IOException e) {
-            throw new CouchMoveException("Unable to calculate file checksum '" + file.getName() + "'");
+            throw new CouchmoveException("Unable to calculate file checksum '" + file.getName() + "'");
         }
     }
 

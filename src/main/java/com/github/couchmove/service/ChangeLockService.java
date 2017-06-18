@@ -3,7 +3,7 @@ package com.github.couchmove.service;
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.error.CASMismatchException;
 import com.couchbase.client.java.error.DocumentAlreadyExistsException;
-import com.github.couchmove.exception.CouchMoveException;
+import com.github.couchmove.exception.CouchmoveException;
 import com.github.couchmove.pojo.ChangeLock;
 import com.github.couchmove.repository.CouchbaseRepository;
 import com.github.couchmove.repository.CouchbaseRepositoryImpl;
@@ -95,7 +95,7 @@ public class ChangeLockService {
         if (isLockAcquired()) {
             forceReleaseLock();
         } else {
-            throw new CouchMoveException("Unable to release lock acquired by an other process");
+            throw new CouchmoveException("Unable to release lock acquired by an other process");
         }
     }
 

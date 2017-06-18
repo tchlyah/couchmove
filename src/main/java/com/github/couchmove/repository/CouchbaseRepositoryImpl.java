@@ -17,7 +17,7 @@ import com.couchbase.client.java.query.N1qlQuery;
 import com.couchbase.client.java.util.retry.RetryBuilder;
 import com.couchbase.client.java.util.retry.RetryWhenFunction;
 import com.couchbase.client.java.view.DesignDocument;
-import com.github.couchmove.exception.CouchMoveException;
+import com.github.couchmove.exception.CouchmoveException;
 import com.github.couchmove.pojo.CouchbaseEntity;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -63,7 +63,7 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
             entity.setCas(insertedDocument.cas());
             return entity;
         } catch (JsonProcessingException e) {
-            throw new CouchMoveException("Unable to save document with id " + id, e);
+            throw new CouchmoveException("Unable to save document with id " + id, e);
         }
     }
 
@@ -81,7 +81,7 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
             entity.setCas(insertedDocument.cas());
             return entity;
         } catch (JsonProcessingException e) {
-            throw new CouchMoveException("Unable to save document with id " + id, e);
+            throw new CouchmoveException("Unable to save document with id " + id, e);
         }
     }
 
@@ -105,7 +105,7 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
             entity.setCas(document.cas());
             return entity;
         } catch (IOException e) {
-            throw new CouchMoveException("Unable to read document with id " + id, e);
+            throw new CouchmoveException("Unable to read document with id " + id, e);
         }
     }
 
@@ -128,14 +128,14 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
                             N1qlParams.build().consistency(STATEMENT_PLUS))));
             if (!result.parseSuccess()) {
                 logger.info("Invalid N1QL request '{}'", n1qlStatement);
-                throw new CouchMoveException("Invalid n1ql request");
+                throw new CouchmoveException("Invalid n1ql request");
             }
             if (!single(result.finalSuccess())) {
                 logger.error("Unable to execute n1ql request '{}'. Status : {}, errors : ", n1qlStatement, single(result.status()), single(result.errors()));
-                throw new CouchMoveException("Unable to execute n1ql request");
+                throw new CouchmoveException("Unable to execute n1ql request");
             }
         } catch (Exception e) {
-            throw new CouchMoveException("Unable to execute n1ql request", e);
+            throw new CouchmoveException("Unable to execute n1ql request", e);
         }
     }
 

@@ -1,6 +1,6 @@
 package com.github.couchmove.service;
 
-import com.github.couchmove.exception.CouchMoveException;
+import com.github.couchmove.exception.CouchmoveException;
 import com.github.couchmove.pojo.ChangeLog;
 import com.github.couchmove.repository.CouchbaseRepository;
 import org.assertj.core.api.Assertions;
@@ -73,7 +73,7 @@ public class ChangeLogDBServiceTest {
         Assert.assertNotNull(changeLogs.get(1).getCas());
     }
 
-    @Test(expected = CouchMoveException.class)
+    @Test(expected = CouchmoveException.class)
     public void should_fetch_fail_when_checksum_does_not_match() {
         // Given a changeLog stored on DB
         ChangeLog dbChangeLog = getRandomChangeLog();

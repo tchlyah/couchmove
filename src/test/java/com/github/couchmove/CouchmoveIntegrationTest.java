@@ -3,7 +3,7 @@ package com.github.couchmove;
 import com.couchbase.client.java.query.util.IndexInfo;
 import com.couchbase.client.java.view.DesignDocument;
 import com.github.couchmove.container.AbstractCouchbaseTest;
-import com.github.couchmove.exception.CouchMoveException;
+import com.github.couchmove.exception.CouchmoveException;
 import com.github.couchmove.pojo.ChangeLog;
 import com.github.couchmove.pojo.Status;
 import com.github.couchmove.pojo.Type;
@@ -30,7 +30,7 @@ import static org.junit.Assert.*;
  * @author ctayeb
  * Created on 05/06/2017
  */
-public class CouchMoveIntegrationTest extends AbstractCouchbaseTest {
+public class CouchmoveIntegrationTest extends AbstractCouchbaseTest {
 
     public static final String DB_MIGRATION = "db/migration/";
 
@@ -49,11 +49,11 @@ public class CouchMoveIntegrationTest extends AbstractCouchbaseTest {
 
     @Test
     public void should_migrate_successfully() {
-        // Given a CouchMove instance configured for success migration folder
-        CouchMove couchMove = new CouchMove(getBucket(), DB_MIGRATION + "success");
+        // Given a Couchmove instance configured for success migration folder
+        Couchmove couchmove = new Couchmove(getBucket(), DB_MIGRATION + "success");
 
         // When we launch migration
-        couchMove.migrate();
+        couchmove.migrate();
 
         // Then all changeLogs should be inserted in DB
         List<ChangeLog> changeLogs = Stream.of("1", "1.1", "2")
@@ -110,7 +110,7 @@ public class CouchMoveIntegrationTest extends AbstractCouchbaseTest {
                 .build());
 
         // When we execute migration in skip migration folder
-        new CouchMove(getBucket(), DB_MIGRATION + "skip").migrate();
+        new Couchmove(getBucket(), DB_MIGRATION + "skip").migrate();
 
         // Then the old ChangeLog is marked as skipped
         assertLike(changeLogRepository.findOne(PREFIX_ID + "1.2"), "1.2", null, "type", DESIGN_DOC, "V1.2__type.json", "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", SKIPPED);
@@ -118,11 +118,11 @@ public class CouchMoveIntegrationTest extends AbstractCouchbaseTest {
 
     @Test
     public void should_migration_fail_on_exception() {
-        // Given a CouchMove instance configured for fail migration folder
-        CouchMove couchMove = new CouchMove(getBucket(), DB_MIGRATION + "fail");
+        // Given a Couchmove instance configured for fail migration folder
+        Couchmove couchmove = new Couchmove(getBucket(), DB_MIGRATION + "fail");
 
         // When we launch migration, then an exception should be raised
-        assertThrows(couchMove::migrate, CouchMoveException.class);
+        assertThrows(couchmove::migrate, CouchmoveException.class);
 
         // Then new ChangeLog is executed
         assertLike(changeLogRepository.findOne(PREFIX_ID + "1"), "1", 1, "insert users", N1QL, "V1__insert_users.n1ql", "efcc80f763e48e2a1d5b6689351ad1b4d678c70bebc0c0975a2d19f94e938f18", EXECUTED);
@@ -150,7 +150,7 @@ public class CouchMoveIntegrationTest extends AbstractCouchbaseTest {
                 .build());
 
         // When we execute migration in update migration folder
-        new CouchMove(getBucket(), DB_MIGRATION + "update").migrate();
+        new Couchmove(getBucket(), DB_MIGRATION + "update").migrate();
 
         // Then executed changeLog description updated
         assertLike(changeLogRepository.findOne(PREFIX_ID + "1"), "1", 1, "create index", N1QL, "V1__create_index.n1ql", "69eb9007c910c2b9cac46044a54de5e933b768ae874c6408356372576ab88dbd", EXECUTED);

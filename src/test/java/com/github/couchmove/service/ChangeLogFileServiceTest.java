@@ -1,6 +1,6 @@
 package com.github.couchmove.service;
 
-import com.github.couchmove.exception.CouchMoveException;
+import com.github.couchmove.exception.CouchmoveException;
 import com.github.couchmove.pojo.ChangeLog;
 import com.github.couchmove.pojo.Type;
 import org.apache.commons.io.FileUtils;
@@ -20,7 +20,7 @@ import static com.github.couchmove.utils.TestUtils.getRandomString;
  */
 public class ChangeLogFileServiceTest {
 
-    @Test(expected = CouchMoveException.class)
+    @Test(expected = CouchmoveException.class)
     public void should_fail_if_path_does_not_exists() {
         String folderPath;
         //noinspection StatementWithEmptyBody
@@ -28,7 +28,7 @@ public class ChangeLogFileServiceTest {
         ChangeLogFileService.initializeFolder(folderPath);
     }
 
-    @Test(expected = CouchMoveException.class)
+    @Test(expected = CouchmoveException.class)
     public void should_fail_if_path_is_not_directory() throws Exception {
         File tempFile = File.createTempFile(getRandomString(), "");
         tempFile.deleteOnExit();
@@ -47,7 +47,7 @@ public class ChangeLogFileServiceTest {
         Assert.assertEquals(Type.N1QL, ChangeLogFileService.getChangeLogType(new File("toto.N1QL")));
     }
 
-    @Test(expected = CouchMoveException.class)
+    @Test(expected = CouchmoveException.class)
     public void should_throw_exception_when_unknown_file_type() {
         ChangeLogFileService.getChangeLogType(new File("toto"));
     }

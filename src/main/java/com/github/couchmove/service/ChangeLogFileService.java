@@ -1,6 +1,6 @@
 package com.github.couchmove.service;
 
-import com.github.couchmove.exception.CouchMoveException;
+import com.github.couchmove.exception.CouchmoveException;
 import com.github.couchmove.pojo.ChangeLog;
 import com.github.couchmove.pojo.Type;
 import com.github.couchmove.utils.FileUtils;
@@ -99,13 +99,13 @@ public class ChangeLogFileService {
         try {
             path = FileUtils.getPathFromResource(changePath);
         } catch (FileNotFoundException e) {
-            throw new CouchMoveException("The change path '" + changePath + "'doesn't exist");
+            throw new CouchmoveException("The change path '" + changePath + "'doesn't exist");
         } catch (IOException e) {
-            throw new CouchMoveException("Unable to get change path '" + changePath + "'", e);
+            throw new CouchmoveException("Unable to get change path '" + changePath + "'", e);
         }
         File file = path.toFile();
         if (!file.isDirectory()) {
-            throw new CouchMoveException("The change path '" + changePath + "' is not a directory");
+            throw new CouchmoveException("The change path '" + changePath + "' is not a directory");
         }
         return file;
     }
@@ -133,7 +133,7 @@ public class ChangeLogFileService {
                 return N1QL;
             }
         }
-        throw new CouchMoveException("Unknown ChangeLog type : " + file.getName());
+        throw new CouchmoveException("Unknown ChangeLog type : " + file.getName());
     }
     //</editor-fold>
 

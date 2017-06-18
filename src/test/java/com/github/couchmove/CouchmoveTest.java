@@ -1,7 +1,7 @@
 package com.github.couchmove;
 
 import com.couchbase.client.java.Bucket;
-import com.github.couchmove.exception.CouchMoveException;
+import com.github.couchmove.exception.CouchmoveException;
 import com.github.couchmove.pojo.ChangeLog;
 import com.github.couchmove.service.ChangeLockService;
 import com.github.couchmove.service.ChangeLogDBService;
@@ -27,10 +27,10 @@ import static org.mockito.Mockito.*;
  * Created on 04/06/2017
  */
 @RunWith(MockitoJUnitRunner.class)
-public class CouchMoveTest {
+public class CouchmoveTest {
 
     @InjectMocks
-    private CouchMove couchMove = new CouchMove(mockBucket());
+    private Couchmove couchmove = new Couchmove(mockBucket());
 
     @Mock
     private ChangeLockService lockServiceMock;
@@ -41,10 +41,10 @@ public class CouchMoveTest {
     @Mock
     private ChangeLogFileService fileServiceMock;
 
-    @Test(expected = CouchMoveException.class)
+    @Test(expected = CouchmoveException.class)
     public void should_migration_fail_if_lock_not_acquired() {
         when(lockServiceMock.acquireLock()).thenReturn(false);
-        couchMove.migrate();
+        couchmove.migrate();
     }
 
     @Test
@@ -52,7 +52,7 @@ public class CouchMoveTest {
         when(lockServiceMock.acquireLock()).thenReturn(true);
         when(fileServiceMock.fetch()).thenReturn(newArrayList(getRandomChangeLog()));
         when(dbServiceMock.fetchAndCompare(any())).thenReturn(emptyList());
-        couchMove.migrate();
+        couchmove.migrate();
         verify(lockServiceMock).releaseLock();
     }
 
@@ -63,7 +63,7 @@ public class CouchMoveTest {
                 .status(EXECUTED)
                 .order(1)
                 .build();
-        couchMove.executeMigration(newArrayList(changeLog));
+        couchmove.executeMigration(newArrayList(changeLog));
         verify(dbServiceMock).save(changeLog);
     }
 
@@ -75,7 +75,7 @@ public class CouchMoveTest {
                 .order(1)
                 .build();
         skippedChangeLog.setCas(RANDOM.nextLong());
-        couchMove.executeMigration(newArrayList(skippedChangeLog));
+        couchmove.executeMigration(newArrayList(skippedChangeLog));
         verify(dbServiceMock, never()).save(any());
     }
 
@@ -85,7 +85,7 @@ public class CouchMoveTest {
                 .version("1")
                 .status(SKIPPED)
                 .build();
-        couchMove.executeMigration(newArrayList(skippedChangeLog));
+        couchmove.executeMigration(newArrayList(skippedChangeLog));
         verify(dbServiceMock, never()).save(any());
     }
 
@@ -99,15 +99,15 @@ public class CouchMoveTest {
                 .order(2)
                 .status(EXECUTED)
                 .build();
-        couchMove.executeMigration(newArrayList(changeLogToSkip, executedChangeLog));
+        couchmove.executeMigration(newArrayList(changeLogToSkip, executedChangeLog));
         verify(dbServiceMock).save(changeLogToSkip);
         Assert.assertEquals(SKIPPED, changeLogToSkip.getStatus());
     }
 
     @Test
     public void should_execute_migrations() {
-        CouchMove couchMove = spy(CouchMove.class);
-        couchMove.setDbService(dbServiceMock);
+        Couchmove couchmove = spy(Couchmove.class);
+        couchmove.setDbService(dbServiceMock);
         ChangeLog executedChangeLog = ChangeLog.builder()
                 .version("1")
                 .order(1)
@@ -118,20 +118,20 @@ public class CouchMoveTest {
                 .version("2")
                 .type(DOCUMENTS)
                 .build();
-        doReturn(true).when(couchMove).doExecute(changeLog);
-        couchMove.executeMigration(newArrayList(executedChangeLog, changeLog));
+        doReturn(true).when(couchmove).doExecute(changeLog);
+        couchmove.executeMigration(newArrayList(executedChangeLog, changeLog));
         Assert.assertEquals((Integer) 2, changeLog.getOrder());
     }
 
-    @Test(expected = CouchMoveException.class)
+    @Test(expected = CouchmoveException.class)
     public void should_throw_exception_if_migration_failed() {
-        CouchMove couchMove = spy(CouchMove.class);
+        Couchmove couchmove = spy(Couchmove.class);
         ChangeLog changeLog = ChangeLog.builder()
                 .version("1")
                 .type(N1QL)
                 .build();
-        doReturn(false).when(couchMove).executeMigration(changeLog, 1);
-        couchMove.executeMigration(newArrayList(changeLog));
+        doReturn(false).when(couchmove).executeMigration(changeLog, 1);
+        couchmove.executeMigration(newArrayList(changeLog));
     }
 
     @Test
@@ -141,7 +141,7 @@ public class CouchMoveTest {
                 .description("description")
                 .type(DESIGN_DOC)
                 .build();
-        couchMove.executeMigration(changeLog, 1);
+        couchmove.executeMigration(changeLog, 1);
         verify(dbServiceMock).save(changeLog);
         Assert.assertNotNull(changeLog.getTimestamp());
         Assert.assertNotNull(changeLog.getDuration());
@@ -155,8 +155,8 @@ public class CouchMoveTest {
                 .version("1")
                 .type(DOCUMENTS)
                 .build();
-        doThrow(CouchMoveException.class).when(dbServiceMock).importDocuments(any());
-        couchMove.executeMigration(changeLog, 1);
+        doThrow(CouchmoveException.class).when(dbServiceMock).importDocuments(any());
+        couchmove.executeMigration(changeLog, 1);
         verify(dbServiceMock).save(changeLog);
         Assert.assertNotNull(changeLog.getTimestamp());
         Assert.assertNotNull(changeLog.getDuration());

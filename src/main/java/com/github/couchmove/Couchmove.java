@@ -3,7 +3,7 @@ package com.github.couchmove;
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.query.N1qlQuery;
 import com.couchbase.client.java.view.DesignDocument;
-import com.github.couchmove.exception.CouchMoveException;
+import com.github.couchmove.exception.CouchmoveException;
 import com.github.couchmove.pojo.ChangeLog;
 import com.github.couchmove.pojo.Status;
 import com.github.couchmove.pojo.Type;
@@ -34,11 +34,11 @@ import static com.github.couchmove.pojo.Status.*;
  * Created on 03/06/2017
  */
 @NoArgsConstructor(access = AccessLevel.PACKAGE)
-public class CouchMove {
+public class Couchmove {
 
     public static final String DEFAULT_MIGRATION_PATH = "db/migration";
 
-    private static final Logger logger = LoggerFactory.getLogger(CouchMove.class);
+    private static final Logger logger = LoggerFactory.getLogger(Couchmove.class);
 
     private String bucketName;
 
@@ -50,21 +50,21 @@ public class CouchMove {
     private ChangeLogFileService fileService;
 
     /**
-     * Initialize a {@link CouchMove} instance with default migration path : {@value DEFAULT_MIGRATION_PATH}
+     * Initialize a {@link Couchmove} instance with default migration path : {@value DEFAULT_MIGRATION_PATH}
      *
      * @param bucket Couchbase {@link Bucket} to execute the migrations on
      */
-    public CouchMove(Bucket bucket) {
+    public Couchmove(Bucket bucket) {
         this(bucket, DEFAULT_MIGRATION_PATH);
     }
 
     /**
-     * Initialize a {@link CouchMove} instance
+     * Initialize a {@link Couchmove} instance
      *
      * @param bucket     Couchbase {@link Bucket} to execute the migrations on
      * @param changePath absolute or relative path of the migration folder containing {@link ChangeLog}
      */
-    public CouchMove(Bucket bucket, String changePath) {
+    public Couchmove(Bucket bucket, String changePath) {
         logger.info("Connected to bucket '{}'", bucketName = bucket.name());
         lockService = new ChangeLockService(bucket);
         dbService = new ChangeLogDBService(bucket);
@@ -77,7 +77,7 @@ public class CouchMove {
      *     <li> Tries to acquire Couchbase {@link Bucket} lock
      *     <li> Fetch all {@link ChangeLog}s from migration folder
      *     <li> Fetch corresponding {@link ChangeLog}s from {@link Bucket}
-     *     <li> Execute found {@link ChangeLog}s : {@link CouchMove#executeMigration(List)}
+     *     <li> Execute found {@link ChangeLog}s : {@link Couchmove#executeMigration(List)}
      * </ol>
      */
     public void migrate() {
@@ -85,14 +85,14 @@ public class CouchMove {
         try {
             // Acquire bucket lock
             if (!lockService.acquireLock()) {
-                logger.error("CouchMove did not acquire bucket '{}' lock. Exiting", bucketName);
-                throw new CouchMoveException("Unable to acquire lock");
+                logger.error("Couchmove did not acquire bucket '{}' lock. Exiting", bucketName);
+                throw new CouchmoveException("Unable to acquire lock");
             }
 
             // Fetching ChangeLogs from migration directory
             List<ChangeLog> changeLogs = fileService.fetch();
             if (changeLogs.isEmpty()) {
-                logger.info("CouchMove did not find any migration scripts");
+                logger.info("Couchmove did not find any migration scripts");
                 return;
             }
 
@@ -102,12 +102,12 @@ public class CouchMove {
             // Executing migration
             executeMigration(changeLogs);
         } catch (Exception e) {
-            throw new CouchMoveException("Unable to migrate", e);
+            throw new CouchmoveException("Unable to migrate", e);
         } finally {
             // Release lock
             lockService.releaseLock();
         }
-        logger.info("CouchMove has finished his job");
+        logger.info("Couchmove has finished his job");
     }
 
     /**
@@ -116,7 +116,7 @@ public class CouchMove {
      *      <li> If {@link ChangeLog#version} is lower than last executed one, ignore it and mark it as {@link Status#SKIPPED}
      *      <li> If an {@link Status#EXECUTED} ChangeLog was modified, fail
      *      <li> If an {@link Status#EXECUTED} ChangeLog description was modified, update it
-     *      <li> Otherwise apply the ChangeLog : {@link CouchMove#executeMigration(ChangeLog, int)}
+     *      <li> Otherwise apply the ChangeLog : {@link Couchmove#executeMigration(ChangeLog, int)}
      *  </ul>
      *
      * @param changeLogs to execute
@@ -167,7 +167,7 @@ public class CouchMove {
                 lastVersion = changeLog.getVersion();
                 migrationCount++;
             } else {
-                throw new CouchMoveException("Migration failed");
+                throw new CouchmoveException("Migration failed");
             }
         }
         if (migrationCount == 0) {
