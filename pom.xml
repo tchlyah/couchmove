@@ -12,7 +12,7 @@
         <couchbase.client.version>2.4.5</couchbase.client.version>
     </properties>
 
-    <groupId>com.github</groupId>
+    <groupId>com.github.differentway</groupId>
     <artifactId>couchmove</artifactId>
     <version>develop-SNAPSHOT</version>
 
