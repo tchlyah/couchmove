@@ -6,6 +6,7 @@ import com.github.couchmove.pojo.ChangeLog;
 import com.github.couchmove.service.ChangeLockService;
 import com.github.couchmove.service.ChangeLogDBService;
 import com.github.couchmove.service.ChangeLogFileService;
+import com.github.couchmove.utils.TestUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -16,6 +17,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 import static com.github.couchmove.pojo.Status.*;
 import static com.github.couchmove.pojo.Type.*;
 import static com.github.couchmove.utils.TestUtils.RANDOM;
+import static com.github.couchmove.utils.TestUtils.assertThrows;
 import static com.github.couchmove.utils.TestUtils.getRandomChangeLog;
 import static com.google.common.collect.Lists.newArrayList;
 import static java.util.Collections.emptyList;
@@ -41,10 +43,10 @@ public class CouchmoveTest {
     @Mock
     private ChangeLogFileService fileServiceMock;
 
-    @Test(expected = CouchmoveException.class)
+    @Test
     public void should_migration_fail_if_lock_not_acquired() {
         when(lockServiceMock.acquireLock()).thenReturn(false);
-        couchmove.migrate();
+        assertThrows(() -> couchmove.migrate(), CouchmoveException.class);
     }
 
     @Test
@@ -60,6 +62,7 @@ public class CouchmoveTest {
     public void should_migration_save_updated_changeLog() {
         ChangeLog changeLog = ChangeLog.builder()
                 .version("1")
+                .description("update")
                 .status(EXECUTED)
                 .order(1)
                 .build();
@@ -93,9 +96,11 @@ public class CouchmoveTest {
     public void should_migration_skip_changeLog_with_old_version() {
         ChangeLog changeLogToSkip = ChangeLog.builder()
                 .version("1")
+                .description("old version")
                 .build();
         ChangeLog executedChangeLog = ChangeLog.builder()
                 .version("2")
+                .description("new version")
                 .order(2)
                 .status(EXECUTED)
                 .build();
@@ -116,29 +121,30 @@ public class CouchmoveTest {
         executedChangeLog.setCas(RANDOM.nextLong());
         ChangeLog changeLog = ChangeLog.builder()
                 .version("2")
+                .description("valid")
                 .type(DOCUMENTS)
                 .build();
-        doReturn(true).when(couchmove).doExecute(changeLog);
+        doNothing().when(couchmove).doExecute(changeLog);
         couchmove.executeMigration(newArrayList(executedChangeLog, changeLog));
         Assert.assertEquals((Integer) 2, changeLog.getOrder());
     }
 
-    @Test(expected = CouchmoveException.class)
+    @Test
     public void should_throw_exception_if_migration_failed() {
         Couchmove couchmove = spy(Couchmove.class);
         ChangeLog changeLog = ChangeLog.builder()
                 .version("1")
                 .type(N1QL)
                 .build();
-        doReturn(false).when(couchmove).executeMigration(changeLog, 1);
-        couchmove.executeMigration(newArrayList(changeLog));
+        doThrow(CouchmoveException.class).when(couchmove).executeMigration(changeLog, 1);
+        assertThrows(() -> couchmove.executeMigration(newArrayList(changeLog)), CouchmoveException.class);
     }
 
     @Test
     public void should_update_changeLog_on_migration_success() {
         ChangeLog changeLog = ChangeLog.builder()
                 .version("1")
-                .description("description")
+                .description("valid change log")
                 .type(DESIGN_DOC)
                 .build();
         couchmove.executeMigration(changeLog, 1);
@@ -153,10 +159,11 @@ public class CouchmoveTest {
     public void should_update_changeLog_on_migration_failure() {
         ChangeLog changeLog = ChangeLog.builder()
                 .version("1")
+                .description("invalid")
                 .type(DOCUMENTS)
                 .build();
         doThrow(CouchmoveException.class).when(dbServiceMock).importDocuments(any());
-        couchmove.executeMigration(changeLog, 1);
+        assertThrows(() -> couchmove.executeMigration(changeLog, 1), CouchmoveException.class);
         verify(dbServiceMock).save(changeLog);
         Assert.assertNotNull(changeLog.getTimestamp());
         Assert.assertNotNull(changeLog.getDuration());

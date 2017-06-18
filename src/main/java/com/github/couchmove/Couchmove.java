@@ -26,6 +26,8 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import static com.github.couchmove.pojo.Status.*;
+import static com.github.couchmove.utils.Utils.elapsed;
+import static java.lang.String.format;
 
 /**
  * Couchmove Runner
@@ -79,20 +81,22 @@ public class Couchmove {
      *     <li> Fetch corresponding {@link ChangeLog}s from {@link Bucket}
      *     <li> Execute found {@link ChangeLog}s : {@link Couchmove#executeMigration(List)}
      * </ol>
+     *
+     * @throws CouchmoveException if migration fail
      */
-    public void migrate() {
-        logger.info("Begin bucket '{}' migration", bucketName);
+    public void migrate() throws CouchmoveException {
+        logger.info("Begin bucket '{}' update", bucketName);
         try {
             // Acquire bucket lock
             if (!lockService.acquireLock()) {
-                logger.error("Couchmove did not acquire bucket '{}' lock. Exiting", bucketName);
+                logger.error("Couchmove did not acquire bucket '{}' change log lock. Exiting...", bucketName);
                 throw new CouchmoveException("Unable to acquire lock");
             }
 
             // Fetching ChangeLogs from migration directory
             List<ChangeLog> changeLogs = fileService.fetch();
             if (changeLogs.isEmpty()) {
-                logger.info("Couchmove did not find any migration scripts");
+                logger.info("Couchmove did not find any change logs");
                 return;
             }
 
@@ -102,12 +106,13 @@ public class Couchmove {
             // Executing migration
             executeMigration(changeLogs);
         } catch (Exception e) {
+            logger.error("Couchmove Update failed");
             throw new CouchmoveException("Unable to migrate", e);
         } finally {
             // Release lock
             lockService.releaseLock();
         }
-        logger.info("Couchmove has finished his job");
+        logger.info("Couchmove Update Successful");
     }
 
     /**
@@ -122,7 +127,7 @@ public class Couchmove {
      * @param changeLogs to execute
      */
     void executeMigration(List<ChangeLog> changeLogs) {
-        logger.info("Executing migration scripts...");
+        logger.info("Applying change logs...");
         int migrationCount = 0;
         // Get version and order of last executed changeLog
         String lastVersion = "";
@@ -145,7 +150,7 @@ public class Couchmove {
         for (ChangeLog changeLog : changeLogs) {
             if (changeLog.getStatus() == EXECUTED) {
                 if (changeLog.getCas() == null) {
-                    logger.info("Updating changeLog '{}'", changeLog.getVersion());
+                    logger.info("Updating change log '{}::{}'", changeLog.getVersion(), changeLog.getDescription());
                     dbService.save(changeLog);
                 }
                 continue;
@@ -156,24 +161,21 @@ public class Couchmove {
             }
 
             if (lastVersion.compareTo(changeLog.getVersion()) >= 0) {
-                logger.warn("ChangeLog '{}' version is lower than last executed one '{}'. Skipping", changeLog.getVersion(), lastVersion);
+                logger.warn("ChangeLog '{}::{}' version is lower than last executed one '{}'. Skipping", changeLog.getVersion(), changeLog.getDescription(), lastVersion);
                 changeLog.setStatus(SKIPPED);
                 dbService.save(changeLog);
                 continue;
             }
 
-            if (executeMigration(changeLog, lastOrder + 1)) {
-                lastOrder++;
-                lastVersion = changeLog.getVersion();
-                migrationCount++;
-            } else {
-                throw new CouchmoveException("Migration failed");
-            }
+            executeMigration(changeLog, lastOrder + 1);
+            lastOrder++;
+            lastVersion = changeLog.getVersion();
+            migrationCount++;
         }
         if (migrationCount == 0) {
-            logger.info("No new migration scripts found");
+            logger.info("No new change logs found");
         } else {
-            logger.info("Executed {} migration scripts", migrationCount);
+            logger.info("Applied {} change logs", migrationCount);
         }
     }
 
@@ -186,24 +188,25 @@ public class Couchmove {
      *
      * @param changeLog {@link ChangeLog} to execute
      * @param order the order to set if the execution was successful
-     * @return true if the execution was successful, false otherwise
+     * @throws CouchmoveException if the execution fail
      */
-    boolean executeMigration(ChangeLog changeLog, int order) {
-        logger.info("Executing ChangeLog '{}'", changeLog.getVersion());
+    void executeMigration(ChangeLog changeLog, int order) {
+        logger.info("Applying change log '{}::{}'", changeLog.getVersion(), changeLog.getDescription());
         Stopwatch sw = Stopwatch.createStarted();
         changeLog.setTimestamp(new Date());
         changeLog.setRunner(Utils.getUsername());
-        if (doExecute(changeLog)) {
-            logger.info("ChangeLog '{}' successfully executed", changeLog.getVersion());
+        try {
+            doExecute(changeLog);
+            logger.info("Change log '{}::{}' ran successfully in {}", changeLog.getVersion(), changeLog.getDescription(), elapsed(sw));
             changeLog.setOrder(order);
             changeLog.setStatus(EXECUTED);
-        } else {
-            logger.error("Unable to execute ChangeLog '{}'", changeLog.getVersion());
+        } catch (CouchmoveException e) {
             changeLog.setStatus(FAILED);
+            throw new CouchmoveException(format("Unable to apply change log '%s::%s'", changeLog.getVersion(), changeLog.getDescription()), e);
+        } finally {
+            changeLog.setDuration(sw.elapsed(TimeUnit.MILLISECONDS));
+            dbService.save(changeLog);
         }
-        changeLog.setDuration(sw.elapsed(TimeUnit.MILLISECONDS));
-        dbService.save(changeLog);
-        return changeLog.getStatus() == EXECUTED;
     }
 
     /**
@@ -213,10 +216,11 @@ public class Couchmove {
      *     <li> {@link Type#N1QL} : Execute all {@link N1qlQuery} contained in the {@value Constants#N1QL} file
      *     <li> {@link Type#DESIGN_DOC} : Imports {@link DesignDocument} contained in the {@value Constants#JSON} document
      * </ul>
+     *
      * @param changeLog {@link ChangeLog} to apply
-     * @return true if the execution was successful, false otherwise
+     * @throws CouchmoveException if the execution fail
      */
-    boolean doExecute(ChangeLog changeLog) {
+    void doExecute(ChangeLog changeLog) {
         try {
             switch (changeLog.getType()) {
                 case DOCUMENTS:
@@ -231,10 +235,8 @@ public class Couchmove {
                 default:
                     throw new IllegalArgumentException("Unknown ChangeLog Type '" + changeLog.getType() + "'");
             }
-            return true;
         } catch (Exception e) {
-            logger.error("Unable to import " + changeLog.getType().name().toLowerCase().replace("_", " ") + " : '" + changeLog.getScript() + "'", e);
-            return false;
+            throw new CouchmoveException("Unable to import " + changeLog.getType().name().toLowerCase().replace("_", " ") + " : '" + changeLog.getScript() + "'", e);
         }
     }
 }

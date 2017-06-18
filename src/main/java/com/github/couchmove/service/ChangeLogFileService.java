@@ -49,7 +49,7 @@ public class ChangeLogFileService {
      * @return An ordered list of {@link ChangeLog}s by {@link ChangeLog#version}
      */
     public List<ChangeLog> fetch() {
-        logger.info("Fetching changeLogs from migration folder '{}'", changeFolder.getPath());
+        logger.info("Reading from migration folder '{}'", changeFolder.getPath());
         SortedSet<ChangeLog> sortedChangeLogs = new TreeSet<>();
         //noinspection ConstantConditions
         for (File file : changeFolder.listFiles()) {
@@ -67,7 +67,7 @@ public class ChangeLogFileService {
                 sortedChangeLogs.add(changeLog);
             }
         }
-        logger.info("Fetched {} changeLogs from migration folder", sortedChangeLogs.size());
+        logger.info("Fetched {} change logs from migration folder", sortedChangeLogs.size());
         return Collections.unmodifiableList(new ArrayList<>(sortedChangeLogs));
     }
 

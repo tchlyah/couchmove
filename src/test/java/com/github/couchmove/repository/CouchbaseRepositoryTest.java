@@ -5,6 +5,7 @@ import com.couchbase.client.java.error.DocumentAlreadyExistsException;
 import com.couchbase.client.java.query.util.IndexInfo;
 import com.couchbase.client.java.view.DesignDocument;
 import com.github.couchmove.container.AbstractCouchbaseTest;
+import com.github.couchmove.exception.CouchmoveException;
 import com.github.couchmove.pojo.ChangeLog;
 import com.github.couchmove.pojo.Type;
 import com.github.couchmove.utils.TestUtils;
@@ -16,6 +17,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
 
+import static com.github.couchmove.utils.TestUtils.assertThrows;
 import static com.github.couchmove.utils.TestUtils.getRandomString;
 import static java.lang.String.format;
 
@@ -141,6 +143,24 @@ public class CouchbaseRepositoryTest extends AbstractCouchbaseTest {
         IndexInfo indexInfo = indexInfos.get(0);
         Assert.assertEquals(INDEX_NAME, indexInfo.name());
         Assert.assertEquals(format("`%s`", INDEX_NAME), indexInfo.indexKey().get(0));
+    }
+
+    @Test
+    public void should_execute_n1ql_parse_fail() {
+        // Given an invalid request
+        String request = format("CREATE INDEX `%s`", INDEX_NAME);
+
+        // When we execute the query
+        assertThrows(() -> repository.query(request), CouchmoveException.class);
+    }
+
+    @Test
+    public void should_execute_n1ql_fail() {
+        // Given an index on invalid bucket
+        String request = format("CREATE INDEX `%s` on toto(%s)", INDEX_NAME, INDEX_NAME);
+
+        // When we execute the query
+        assertThrows(() -> repository.query(request), CouchmoveException.class);
     }
 
     @Test

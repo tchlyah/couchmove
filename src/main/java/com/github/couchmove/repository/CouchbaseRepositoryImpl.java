@@ -32,6 +32,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 import static com.couchbase.client.java.query.consistency.ScanConsistency.STATEMENT_PLUS;
+import static lombok.AccessLevel.PACKAGE;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -39,7 +40,8 @@ import static org.slf4j.LoggerFactory.getLogger;
  *         Created on 27/05/2017
  */
 // For tests
-@NoArgsConstructor(access = AccessLevel.PACKAGE, force = true)
+@SuppressWarnings("ConstantConditions")
+@NoArgsConstructor(access = PACKAGE, force = true)
 @RequiredArgsConstructor
 public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements CouchbaseRepository<E> {
 
@@ -57,6 +59,7 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
 
     @Override
     public E save(String id, E entity) {
+        logger.trace("Save entity '{}' with id '{}'", entity, id);
         try {
             String json = getJsonMapper().writeValueAsString(entity);
             RawJsonDocument insertedDocument = runAsync(bucket -> bucket.upsert(RawJsonDocument.create(id, json)));
@@ -69,6 +72,7 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
 
     @Override
     public E checkAndSave(String id, E entity) {
+        logger.trace("Check and save entity '{}' with id '{}'", entity, id);
         try {
             String content = getJsonMapper().writeValueAsString(entity);
             RawJsonDocument insertedDocument;
@@ -87,15 +91,17 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
 
     @Override
     public void delete(String id) {
+        logger.trace("Remove entity with id '{}'", id);
         try {
             runAsync(bucket -> bucket.remove(id));
         } catch (DocumentDoesNotExistException e) {
-            logger.warn("Trying to delete document that does not exist : '{}'", id);
+            logger.debug("Trying to delete document that does not exist : '{}'", id);
         }
     }
 
     @Override
     public E findOne(String id) {
+        logger.trace("Find entity with id '{}'", id);
         RawJsonDocument document = runAsync(bucket -> bucket.get(id, RawJsonDocument.class));
         if (document == null) {
             return null;
@@ -111,27 +117,29 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
 
     @Override
     public void save(String id, String jsonContent) {
+        logger.trace("Save document with id '{}' : \n'{}'", id, jsonContent);
         runAsync(bucket -> bucket.upsert(RawJsonDocument.create(id, jsonContent)));
     }
 
     @Override
     public void importDesignDoc(String name, String jsonContent) {
+        logger.trace("Import document : \n'{}'", jsonContent);
         bucket.bucketManager().upsertDesignDocument(DesignDocument.from(name, JsonObject.fromJson(jsonContent)));
-    }
+}
 
     @Override
     public void query(String n1qlStatement) {
-        logger.debug("Executing n1ql request : {}", n1qlStatement);
+        logger.debug("Execute n1ql request : \n{}", n1qlStatement);
         try {
             AsyncN1qlQueryResult result = runAsync(bucket -> bucket
                     .query(N1qlQuery.simple(n1qlStatement,
                             N1qlParams.build().consistency(STATEMENT_PLUS))));
             if (!result.parseSuccess()) {
-                logger.info("Invalid N1QL request '{}'", n1qlStatement);
+                logger.error("Invalid N1QL request '{}' : {}", n1qlStatement, single(result.errors()));
                 throw new CouchmoveException("Invalid n1ql request");
             }
             if (!single(result.finalSuccess())) {
-                logger.error("Unable to execute n1ql request '{}'. Status : {}, errors : ", n1qlStatement, single(result.status()), single(result.errors()));
+                logger.error("Unable to execute n1ql request '{}'. Status : {}, errors : {}", n1qlStatement, single(result.status()), single(result.errors()));
                 throw new CouchmoveException("Unable to execute n1ql request");
             }
         } catch (Exception e) {
@@ -144,6 +152,7 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
         return bucket.name();
     }
 
+    //<editor-fold desc="Helpers">
     @Nullable
     private <T> T single(Observable<T> observable) {
         return observable.toBlocking().singleOrDefault(null);
@@ -162,4 +171,5 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
                 .max(3)
                 .build();
     }
+    //</editor-fold>
 }

@@ -40,14 +40,14 @@ public class ChangeLockService {
      * @return true if lock successfully acquired, false otherwise
      */
     public boolean acquireLock() {
-        logger.info("Trying to acquire bucket '{}' lock...", repository.getBucketName());
+        logger.info("Trying to acquire bucket '{}' change log lock...", repository.getBucketName());
         // Verify if there is any lock on database
         ChangeLock lock = repository.findOne(LOCK_ID);
         // If none, create one
         if (lock == null) {
             lock = new ChangeLock();
         } else if (lock.isLocked()) {
-            logger.warn("The database is already locked by '{}'", lock.getRunner());
+            logger.warn("The bucket is already locked by '{}'", lock.getRunner());
             return false;
         }
         // Create Lock information
@@ -61,10 +61,10 @@ public class ChangeLockService {
         } catch (CASMismatchException | DocumentAlreadyExistsException e) {
             // In case of exception, this means an other process got the lock, logging its information
             lock = repository.findOne(LOCK_ID);
-            logger.warn("The bucket '{}' is already locked by '{}'", repository.getBucketName(), lock.getRunner());
+            logger.warn("The bucket is already locked by '{}'", lock.getRunner());
             return false;
         }
-        logger.info("Lock acquired");
+        logger.info("Successfully acquired change log lock");
         return true;
     }
 
@@ -82,7 +82,7 @@ public class ChangeLockService {
             return false;
         }
         if (lock.getUuid() == null || !lock.getUuid().equals(uuid)) {
-            logger.warn("Lock is acquired by another process");
+            logger.warn("Change log lock is acquired by another process");
             return false;
         }
         return true;
@@ -103,7 +103,7 @@ public class ChangeLockService {
      * Force release pessimistic lock even if the current instance doesn't hold it
      */
     public void forceReleaseLock() {
-        logger.info("Release lock");
         repository.delete(LOCK_ID);
+        logger.info("Successfully released change log lock");
     }
 }
