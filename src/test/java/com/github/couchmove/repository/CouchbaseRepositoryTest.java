@@ -4,7 +4,7 @@ import com.couchbase.client.java.error.CASMismatchException;
 import com.couchbase.client.java.error.DocumentAlreadyExistsException;
 import com.couchbase.client.java.query.util.IndexInfo;
 import com.couchbase.client.java.view.DesignDocument;
-import com.github.couchmove.container.AbstractCouchbaseTest;
+import org.testcontainers.couchbase.AbstractCouchbaseTest;
 import com.github.couchmove.exception.CouchmoveException;
 import com.github.couchmove.pojo.ChangeLog;
 import com.github.couchmove.pojo.Type;

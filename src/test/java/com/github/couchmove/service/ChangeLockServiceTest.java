@@ -1,6 +1,6 @@
 package com.github.couchmove.service;
 
-import com.github.couchmove.container.AbstractCouchbaseTest;
+import org.testcontainers.couchbase.AbstractCouchbaseTest;
 import com.github.couchmove.exception.CouchmoveException;
 import org.junit.Test;
 

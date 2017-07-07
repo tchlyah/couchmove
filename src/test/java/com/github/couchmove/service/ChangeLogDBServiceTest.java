@@ -3,6 +3,7 @@ package com.github.couchmove.service;
 import com.github.couchmove.exception.CouchmoveException;
 import com.github.couchmove.pojo.ChangeLog;
 import com.github.couchmove.repository.CouchbaseRepository;
+import com.google.common.collect.Lists;
 import org.assertj.core.api.Assertions;
 import org.junit.Assert;
 import org.junit.Before;
@@ -12,7 +13,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.testcontainers.shaded.com.google.common.collect.Lists;
 
 import java.util.ArrayList;
 import java.util.List;
