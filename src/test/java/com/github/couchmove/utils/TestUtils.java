@@ -36,7 +36,6 @@ public class TestUtils {
                 .script("V" + version + "__" + description + (!type.getExtension().isEmpty() ? "." + type.getExtension() : ""))
                 .duration(RANDOM.nextLong())
                 .checksum(getRandomString())
-                .status(Status.values()[Math.abs(RANDOM.nextInt(Status.values().length))])
                 .build();
     }
 

@@ -6,7 +6,6 @@ import com.github.couchmove.pojo.ChangeLog;
 import com.github.couchmove.service.ChangeLockService;
 import com.github.couchmove.service.ChangeLogDBService;
 import com.github.couchmove.service.ChangeLogFileService;
-import com.github.couchmove.utils.TestUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -16,9 +15,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import static com.github.couchmove.pojo.Status.*;
 import static com.github.couchmove.pojo.Type.*;
-import static com.github.couchmove.utils.TestUtils.RANDOM;
-import static com.github.couchmove.utils.TestUtils.assertThrows;
-import static com.github.couchmove.utils.TestUtils.getRandomChangeLog;
+import static com.github.couchmove.utils.TestUtils.*;
 import static com.google.common.collect.Lists.newArrayList;
 import static java.util.Collections.emptyList;
 import static org.mockito.Matchers.any;
@@ -26,7 +23,7 @@ import static org.mockito.Mockito.*;
 
 /**
  * @author ctayeb
- * Created on 04/06/2017
+ *         Created on 04/06/2017
  */
 @RunWith(MockitoJUnitRunner.class)
 public class CouchmoveTest {
@@ -169,6 +166,18 @@ public class CouchmoveTest {
         Assert.assertNotNull(changeLog.getDuration());
         Assert.assertNotNull(changeLog.getRunner());
         Assert.assertEquals(FAILED, changeLog.getStatus());
+    }
+
+    @Test
+    public void should_execute_failed_changeLog_if_updated() {
+        Couchmove couchmove = spy(Couchmove.class);
+        couchmove.setDbService(dbServiceMock);
+        ChangeLog changeLog = getRandomChangeLog().toBuilder()
+                .status(FAILED).build();
+        doNothing().when(couchmove).doExecute(changeLog);
+        couchmove.executeMigration(newArrayList(changeLog));
+        Assert.assertEquals((Integer) 1, changeLog.getOrder());
+        Assert.assertEquals(EXECUTED, changeLog.getStatus());
     }
 
     private static Bucket mockBucket() {

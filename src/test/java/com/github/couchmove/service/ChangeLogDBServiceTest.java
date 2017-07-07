@@ -17,6 +17,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.github.couchmove.pojo.Status.FAILED;
 import static com.github.couchmove.service.ChangeLogDBService.PREFIX_ID;
 import static com.github.couchmove.service.ChangeLogDBService.extractRequests;
 import static com.github.couchmove.utils.TestUtils.*;
@@ -24,7 +25,7 @@ import static org.mockito.Mockito.when;
 
 /**
  * @author ctayeb
- * Created on 03/06/2017
+ *         Created on 03/06/2017
  */
 @RunWith(MockitoJUnitRunner.class)
 public class ChangeLogDBServiceTest {
@@ -110,6 +111,35 @@ public class ChangeLogDBServiceTest {
         // Then it should be same
         Assert.assertEquals(changeLogs, result);
         Assert.assertNull(changeLog.getCas());
+    }
+
+    @Test
+    public void should_return_failed_changeLog_with_cas_reset_if_checksum_reset() {
+        // Given a failed changeLog stored on DB
+        ChangeLog dbChangeLog = getRandomChangeLog();
+        dbChangeLog.setStatus(FAILED);
+        dbChangeLog.setCas(RANDOM.nextLong());
+        when(repository.findOne(PREFIX_ID + dbChangeLog.getVersion())).thenReturn(dbChangeLog);
+
+        // And a changeLog with different checksum
+        String newChecksum = getRandomString();
+        ChangeLog changeLog = dbChangeLog.toBuilder()
+                .checksum(newChecksum)
+                .build();
+
+        // When we call service with the later
+        List<ChangeLog> results = service.fetchAndCompare(Lists.newArrayList(changeLog));
+
+        // Then it should be returned with status reset
+        Assertions.assertThat(results).hasSize(1);
+        ChangeLog result = results.get(0);
+        Assert.assertNull("status", result.getStatus());
+        Assert.assertNotNull("cas", result.getCas());
+        Assert.assertEquals("description", dbChangeLog.getDescription(), result.getDescription());
+        Assert.assertEquals("version", dbChangeLog.getVersion(), result.getVersion());
+        Assert.assertEquals("type", dbChangeLog.getType(), result.getType());
+        Assert.assertEquals("script", dbChangeLog.getScript(), result.getScript());
+        Assert.assertEquals("checksum", newChecksum, result.getChecksum());
     }
 
     @Test

@@ -5,6 +5,7 @@ import com.couchbase.client.java.query.N1qlQuery;
 import com.couchbase.client.java.view.DesignDocument;
 import com.github.couchmove.exception.CouchmoveException;
 import com.github.couchmove.pojo.ChangeLog;
+import com.github.couchmove.pojo.Status;
 import com.github.couchmove.repository.CouchbaseRepository;
 import com.github.couchmove.repository.CouchbaseRepositoryImpl;
 import org.apache.commons.io.FilenameUtils;
@@ -18,7 +19,7 @@ import java.util.stream.Collectors;
  * Service for fetching and executing {@link ChangeLog}s
  *
  * @author ctayeb
- * Created on 03/06/2017
+ *         Created on 03/06/2017
  */
 public class ChangeLogDBService {
 
@@ -63,8 +64,12 @@ public class ChangeLogDBService {
                 dbChangeLog.setChecksum(changeLog.getChecksum());
                 dbChangeLog.setCas(null);
             } else if (!dbChangeLog.getChecksum().equals(changeLog.getChecksum())) {
-                logger.error("Change log version '{}' checksum doesn't match, please verify if the script '{}' content was modified", changeLog.getVersion(), changeLog.getScript());
-                throw new CouchmoveException("ChangeLog checksum doesn't match");
+                if (dbChangeLog.getStatus() != Status.FAILED) {
+                    logger.error("Change log version '{}' checksum doesn't match, please verify if the script '{}' content was modified", changeLog.getVersion(), changeLog.getScript());
+                    throw new CouchmoveException("ChangeLog checksum doesn't match");
+                }
+                dbChangeLog.setStatus(null);
+                dbChangeLog.setChecksum(changeLog.getChecksum());
             }
             if (!dbChangeLog.getDescription().equals(changeLog.getDescription())) {
                 logger.warn("Change log version '{}' description updated", changeLog.getDescription());

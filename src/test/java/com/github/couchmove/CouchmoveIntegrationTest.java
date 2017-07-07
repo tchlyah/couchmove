@@ -2,7 +2,6 @@ package com.github.couchmove;
 
 import com.couchbase.client.java.query.util.IndexInfo;
 import com.couchbase.client.java.view.DesignDocument;
-import org.testcontainers.couchbase.AbstractCouchbaseTest;
 import com.github.couchmove.exception.CouchmoveException;
 import com.github.couchmove.pojo.ChangeLog;
 import com.github.couchmove.pojo.Status;
@@ -13,6 +12,7 @@ import com.github.couchmove.repository.CouchbaseRepositoryImpl;
 import com.github.couchmove.service.ChangeLogDBService;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.testcontainers.couchbase.AbstractCouchbaseTest;
 
 import java.util.Date;
 import java.util.List;
@@ -28,7 +28,7 @@ import static org.junit.Assert.*;
 
 /**
  * @author ctayeb
- * Created on 05/06/2017
+ *         Created on 05/06/2017
  */
 public class CouchmoveIntegrationTest extends AbstractCouchbaseTest {
 
@@ -131,6 +131,29 @@ public class CouchmoveIntegrationTest extends AbstractCouchbaseTest {
 
         // And the ChangeLog marked as failed
         assertLike(changeLogRepository.findOne(PREFIX_ID + "2"), "2", null, "invalid request", N1QL, "V2__invalid_request.n1ql", "890c7bac55666a3073059c57f34e358f817e275eb68932e946ca35e9dcd428fe", FAILED);
+    }
+
+    @Test
+    public void should_fixed_failed_migration_pass() {
+        // Given a Couchmove instance configured for fail migration folder
+        Couchmove couchmove = new Couchmove(getBucket(), DB_MIGRATION + "fail");
+
+        // When we launch migration, then an exception should be raised
+        assertThrows(couchmove::migrate, CouchmoveException.class);
+
+        // Given a Couchmove instance configured for fixed-fail migration folder
+        couchmove = new Couchmove(getBucket(), DB_MIGRATION + "fixed-fail");
+
+        // When we relaunch migration
+        couchmove.migrate();
+
+        // Then it should be success
+        assertLike(changeLogRepository.findOne(PREFIX_ID + "1"), "1", 1, "insert users", N1QL, "V1__insert_users.n1ql", "efcc80f763e48e2a1d5b6689351ad1b4d678c70bebc0c0975a2d19f94e938f18", EXECUTED);
+
+        assertLike(changeLogRepository.findOne(PREFIX_ID + "2"), "2", 2, "invalid request", N1QL, "V2__invalid_request.n1ql",
+                "778c69b64c030eec8b33eb6ebf955954a3dfa20cab489021a2b71d445d5c3e54", EXECUTED);
+
+        assertEquals(new User("user", "toto", "06/03/1997"), userRepository.findOne("user::toto"));
     }
 
     @Test
