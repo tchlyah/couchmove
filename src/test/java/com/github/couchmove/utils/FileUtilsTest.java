@@ -48,7 +48,7 @@ public class FileUtilsTest {
     public static Object[][] fileProvider() {
         return new Object[][]{
                 {DB_MIGRATION_PATH + "V1.1__insert_users", "99a4aaf12e7505286afe2a5b074f7ebabd496f3ea8c4093116efd3d096c430a8"},
-                {DB_MIGRATION_PATH + "V1__create_index.n1ql", "eb4ed634d72ea0af9da0b990e0ebc81f6c09264109078e18d3d7b77cb64f28a5"},
+                {DB_MIGRATION_PATH + "V1__create_index.n1ql", "1a417b9f5787e52a46bc65bcd801e8f3f096e63ebcf4b0a17410b16458124af3"},
                 {DB_MIGRATION_PATH + "V2__user.json", "22df7f8496c21a3e1f3fbd241592628ad6a07797ea5d501df8ab6c65c94dbb79"}
         };
     }

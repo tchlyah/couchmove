@@ -23,6 +23,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang.text.StrSubstitutor;
 import org.slf4j.Logger;
 import rx.Observable;
 
@@ -32,6 +33,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 import static com.couchbase.client.java.query.consistency.ScanConsistency.STATEMENT_PLUS;
+import static com.google.common.collect.ImmutableMap.of;
 import static lombok.AccessLevel.PACKAGE;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -49,6 +51,8 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
 
     @Getter(lazy = true)
     private static final ObjectMapper jsonMapper = new ObjectMapper();
+
+    public static final String BUCKET_PARAM = "bucket";
 
     private final Bucket bucket;
 
@@ -125,26 +129,31 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
     public void importDesignDoc(String name, String jsonContent) {
         logger.trace("Import document : \n'{}'", jsonContent);
         bucket.bucketManager().upsertDesignDocument(DesignDocument.from(name, JsonObject.fromJson(jsonContent)));
-}
+    }
 
     @Override
     public void query(String n1qlStatement) {
-        logger.debug("Execute n1ql request : \n{}", n1qlStatement);
+        String parametrizedStatement = injectParameters(n1qlStatement);
+        logger.debug("Execute n1ql request : \n{}", parametrizedStatement);
         try {
             AsyncN1qlQueryResult result = runAsync(bucket -> bucket
-                    .query(N1qlQuery.simple(n1qlStatement,
+                    .query(N1qlQuery.simple(parametrizedStatement,
                             N1qlParams.build().consistency(STATEMENT_PLUS))));
             if (!result.parseSuccess()) {
-                logger.error("Invalid N1QL request '{}' : {}", n1qlStatement, single(result.errors()));
+                logger.error("Invalid N1QL request '{}' : {}", parametrizedStatement, single(result.errors()));
                 throw new CouchmoveException("Invalid n1ql request");
             }
             if (!single(result.finalSuccess())) {
-                logger.error("Unable to execute n1ql request '{}'. Status : {}, errors : {}", n1qlStatement, single(result.status()), single(result.errors()));
+                logger.error("Unable to execute n1ql request '{}'. Status : {}, errors : {}", parametrizedStatement, single(result.status()), single(result.errors()));
                 throw new CouchmoveException("Unable to execute n1ql request");
             }
         } catch (Exception e) {
             throw new CouchmoveException("Unable to execute n1ql request", e);
         }
+    }
+
+    String injectParameters(String statement) {
+        return StrSubstitutor.replace(statement, of(BUCKET_PARAM, getBucketName()));
     }
 
     @Override

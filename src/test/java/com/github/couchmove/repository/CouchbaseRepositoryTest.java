@@ -4,7 +4,6 @@ import com.couchbase.client.java.error.CASMismatchException;
 import com.couchbase.client.java.error.DocumentAlreadyExistsException;
 import com.couchbase.client.java.query.util.IndexInfo;
 import com.couchbase.client.java.view.DesignDocument;
-import org.testcontainers.couchbase.AbstractCouchbaseTest;
 import com.github.couchmove.exception.CouchmoveException;
 import com.github.couchmove.pojo.ChangeLog;
 import com.github.couchmove.pojo.Type;
@@ -12,6 +11,7 @@ import com.github.couchmove.utils.TestUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.testcontainers.couchbase.AbstractCouchbaseTest;
 
 import java.util.List;
 import java.util.Random;
@@ -128,9 +128,16 @@ public class CouchbaseRepositoryTest extends AbstractCouchbaseTest {
     }
 
     @Test
+    public void should_inject_bucket_name() {
+        String format = "SELECT * FROM `%s`";
+        String statement = format(format, "${bucket}");
+        Assert.assertEquals(format(format, getBucket().name()), ((CouchbaseRepositoryImpl) repository).injectParameters(statement));
+    }
+
+    @Test
     public void should_execute_n1ql() {
         // Given a primary index request
-        String request = format("CREATE INDEX `%s` ON `%s`(`%s`)", INDEX_NAME, getBucket().name(), INDEX_NAME);
+        String request = format("CREATE INDEX `%s` ON `${bucket}`(`%s`)", INDEX_NAME, INDEX_NAME);
 
         // When we execute the query
         repository.query(request);

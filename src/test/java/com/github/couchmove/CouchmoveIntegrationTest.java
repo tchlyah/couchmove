@@ -64,7 +64,7 @@ public class CouchmoveIntegrationTest extends AbstractCouchbaseTest {
         assertEquals(3, changeLogs.size());
         assertLike(changeLogs.get(0),
                 "1", 1, "create index", N1QL, "V1__create_index.n1ql",
-                "eb4ed634d72ea0af9da0b990e0ebc81f6c09264109078e18d3d7b77cb64f28a5",
+                "1a417b9f5787e52a46bc65bcd801e8f3f096e63ebcf4b0a17410b16458124af3",
                 EXECUTED);
         assertLike(changeLogs.get(1),
                 "1.1", 2, "insert users", DOCUMENTS, "V1.1__insert_users",
