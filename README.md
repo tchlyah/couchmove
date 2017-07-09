@@ -14,6 +14,5 @@ Couchmove is widely inspired from [Flyway](http://flywaydb.org) : it strongly fa
 
 Check out our [wiki](https://github.com/differentway/couchmove/wiki)
 
-
 ---
-[![Build Status](https://travis-ci.org/differentway/couchmove.svg?branch=develop)](https://travis-ci.org/differentway/couchmove) [![Licence](https://img.shields.io/hexpm/l/plug.svg)](https://github.com/differentway/couchmove/blob/master/LICENSE)
+[![Build Status](https://travis-ci.org/differentway/couchmove.svg?branch=develop)](https://travis-ci.org/differentway/couchmove) [![Quality Gate](https://sonarcloud.io/api/badges/gate?key=com.github.differentway:couchmove:develop)](https://sonarqube.com/dashboard/index/com.github.differentway:couchmove:develop) [![Licence](https://img.shields.io/hexpm/l/plug.svg)](https://github.com/differentway/couchmove/blob/master/LICENSE)
