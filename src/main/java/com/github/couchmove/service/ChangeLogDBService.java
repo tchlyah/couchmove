@@ -36,10 +36,10 @@ public class ChangeLogDBService {
     /**
      * Get corresponding ChangeLogs from Couchbase bucket
      * <ul>
-     * <li>if a {@link ChangeLog} doesn't exist => return it as it its
+     * <li>if a {@link ChangeLog} doesn't exist → return it as it its
      * <li>else :
      * <ul>
-     * <li>if checksum ({@link ChangeLog#checksum}) is reset (set to null), or description ({@link ChangeLog#description}) updated => reset {@link ChangeLog#cas}
+     * <li>if checksum ({@link ChangeLog#checksum}) is reset (set to null), or description ({@link ChangeLog#description}) updated → reset {@link ChangeLog#cas}
      * <li>return database version
      * </ul>
      * </ul>
