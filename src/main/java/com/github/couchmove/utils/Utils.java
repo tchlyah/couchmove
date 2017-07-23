@@ -56,7 +56,7 @@ public class Utils {
     /**
      * Format duration to human readable
      * <p>
-     * Exemple : 188,100,312 {@link TimeUnit#MILLISECONDS} => 2d 4h 15m 15s 312ms
+     * Exemple : 188,100,312 {@link TimeUnit#MILLISECONDS} → 2d 4h 15m 15s 312ms
      *
      * @param duration duration to format
      * @param timeUnit source timeUnit

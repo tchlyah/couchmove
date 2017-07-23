@@ -46,11 +46,10 @@ public interface CouchbaseRepository<E extends CouchbaseEntity> {
     /**
      * Retrieves a document from Couchbase {@link Bucket} by its ID.
      * <p>
-     * <p>
      * - If the document exists, convert it to {@link CouchbaseEntity} with CAS set (Check And Swap for optimistic concurrency)
      * <br>
      * - Otherwise it return null
-     *
+     * </p>
      * @param id the id of the document
      * @return the found and converted {@link CouchbaseEntity} with CAS set, or null if absent
      */
