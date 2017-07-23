@@ -1,0 +1,7 @@
+{
+  "views": {
+    "findUser": {
+      "map": "function (doc, meta) {\n  if (doc.type == \"user\") {\n    emit(doc.username, null);\n  } \n}"
+    }
+  }
+}

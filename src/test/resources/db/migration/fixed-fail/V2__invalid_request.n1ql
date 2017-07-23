@@ -1,0 +1,8 @@
+INSERT INTO default (KEY, VALUE)
+  VALUES
+    ("user::toto",
+      {
+        "type": "user",
+        "username": "toto",
+        "birthday": "06/03/1997"
+      });

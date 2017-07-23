@@ -1,0 +1,3 @@
+-- create Index
+CREATE INDEX user_index ON `${bucket}`(username)
+  WHERE type = 'user';

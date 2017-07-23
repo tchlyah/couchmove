@@ -1,0 +1,44 @@
+sudo: required
+
+language: java
+
+services:
+  - docker
+
+addons:
+  sonarqube:
+    organization: "differentway-github"
+    token:
+      secure: "fnzS5t/buOCMWV5xx8sGOcPG+6P3LZwFuyOjOI9efm8s6uaYc2dHaKz9A45W2FB6O74pCohO8hVOh+C610fdnlES4JZ3kEy0V4/NWB9jun6w0dT+kPFRCUPmcyrS1zVZvEtlzuy2dUSPUgKfWQKnufZMex1VxghJge022+bGKbxsSYCcn0/EkOnHKN3hcP/WtjgfMQ7NrGrR+nGzZIblQRDL2bLyhx7skI7aVyo4qv93GyFGk5dIqmJtXlh+p8ylzImrJnM+V74NbRQe+YkgYZbH1VNaAzhCiSCRc8YltrAyJXJ1kLS778rIaQptLu2kn3wsZbC1dgGikg0rhy++on/cMvYWPo8LhQO7hGq31pTIblXI3+l0aU+FrKCXbpofIxbXwzBmZUOLa+StfnB9ANvsC9sn2RZ0A73U7lo/4jGY5EmjjyCze7TcyDonySyA/BrmwvDgnxKXrkAcI5jsY4bK+3Zy8pZkCYhoqilTwMsvs54m5skmLA3qv6l4tdmtNRgZD3EUnNutkjpp86gbrMa6d4k0/b2pxSjnK+MhQWKcpgXbH+Z935gTVTUcWxslu+kPXOhuH2uuiScOCCc0O/R7kPjVbFWakdjylOLFubaGKi9PmCyoYfiAcjfhFGoD7t6pXWjQdo3aRSp1d20qnioKi/c0w66hVQImiSU77Dw="
+    branches:
+     - master
+     - develop
+
+script:
+  # JaCoCo is used to have code coverage, the agent has to be activated
+  - mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent package sonar:sonar
+
+deploy:
+  provider: script
+  skip_cleanup: true
+  script: release/deploy.sh
+  on:
+    tags: true
+    branch: master
+
+env:
+  global:
+  # OSSRH_JIRA_USERNAME
+  - secure: "caws3wHcWWqniMDyBq0TejNpJdgZYogiLWsWNMRAbnKvvwtwP21OQDAs/fIW8/7R85U1gT/WY9J/W375EzMHLn7kCqd8H15DMvWbr06WPhs/oxcWIaRaijv9YmVxX/aqPc/31B0YsEY/f5bDtZcu8guVKvhGpBsZMVTK1pHshUbskYvx/0NLDkJgC/KhW0taYfYoQ+6aKS6s15kqUyC+kXMrf7qNiiajWPbgARWAAPHci/XWzlqn9QD+kUq4YK2xgtq6ris5fudfrA1/z5EG+7E5qdsZ7UZaJfs3PGnBv1tpLTKWt2KxcgMVI+P5nEsjxpZ//RJDW7g9wKvJFbwgfB+2b44dAMzer4xOjzK+PeueiOsgXP42MzyUXDlTSAks7+W2u48qntQVYCOv9pMb0rKjUk5LL6SaGQuiZPgNs13jZXiPH8EVxwsf67qjz/wf0KNpejoDxhwa5mnlqOLyTc/+NufIf0Zea1t3Et5YwXZR7i9DvS+N8j01eeHYhIPjMtSAidO7lj+3oRMTw4O+hrnplj3khUJd3J585I6QEPYxcPYH/2gUOmrl7rXuPC0CHa7oiXsHcpBZsGdDxzkkv1s4qTEH6Y3uujb+rXV3CF1cUMGqXwXztyed0WO9KSdXvTjYK/8jQussSVJanbVd3XGUFSYqhJxOWMpxBIqDgQk="
+  # OSSRH_JIRA_PASSWORD
+  - secure: "cYNSycG67mhSUHrOZRcsXeuxMJJ2laScbXT9BNXTThu8GGHat2H/uHIBWvmUl8XVzNGTcQb6L0iI2EGYDAXwqmSWD2qhBStcRBmwSEPvEHmExEiBy8vL33YVH/YWOg50f39A3AZNZAWarrqEZV1UAMiC3Eqgsmn0xkl+C+KJ5WWPMOQItYfV+jq3Gl+MCO6zKF0CLJWfkm4KFbvGkUeQDAgg7+F9kqTAN8Tj/fTxV5PY2MqsqNKVbi91ObhYM3ChW1ZrA/4CTbUAoooAXyc8yJGDgHNVqeOfC4Pe6+BZyl231438x0jf1M2SHA3izx9OHLirSWAOFyseOImxYrTUw+4yB0u43p/2EtY7Njls0dTTVXDjTadskIKYnM/yFVjlw7IGULSahOyICLA/t5bWnl8CMHsPv83ezdRnloMha6My0oB9k4Qk8JHDv4ZP7o/FSKQpngbA/0KEunclLIqlkjqAJ+5vyQrdCyp2KbAGFQEDv6/3U7P8KxM6HSgy21I8r1M3QBrvTHfbw9UbTNBZeDRy0LPwBGo6A7UH6SALW3gYkX8RGan2otEZxUFKX/ZGDnTK9sWiNyUYPlBfMTKCdQlcTKtRorK/4ypQdvcm29jV+44mxKvmvikddAi92sLUgvhfo7nSVgQ5JJYGVLyZEhK2SDzqimJTDq5gsJe+KwA="
+  # GPG_KEY_NAME
+  - secure: "amjeDAgcasXubwZ9hIYf1SfuwmYg9/CQxYwR5vDEzxXbKGzXJWUWy5aDWv/8b6NZ6lOm+wiaGutEvmF/M43SYhc+7NUQZfNBJQQJMZrILsUhFN6hCVeQKSZQ8932fvHnlXzGMrleiUpW/5m5YajS9GyCkV3+Z7hSxW8MuLsYeFGkmCU8S0idUGjt17EklBn4ZNYN1UQr6VJsRgf1ZLzdmdULeQaJBToZNdrP3HH7nfwACa/l7Hq1b1wN87du9QwWcPONc/7JMeZwXpX2kYdQgAaGTk91Z0Kycp7yjMw5SQKm349y3cvensWz0EAmq9ElEUJStafHSat57NjcHXR+fuynfwde0wRkVa9pfJb126lQCnv0E5rT3pJn7GeRXTcUKFKV8pzITEZbU4Xv6j0WFgLF5Ms9Tw01bpCVASq3e1ebO2yjGxLYPhCTOfSw3N5Pubo5DsTDVvFZcZ9aH1/E6wbJ+b1J4lvzyH+xWVw3aFa/hoksfu+vMfOe24YNymaOeOc9V++bi71Ddf8+cWuOHcESPa7M4YEBO6PpfGKqXPK/7W8DrKjfupAfH4qIMUI5KTDPBtjvujyQcQU3949B0QcJcvHGyjk4P0F6L47xUhE4CnyVRV3FkIZita25atZJFc9o3ZiBCJIQ8Jau2u/H/lgGc9EkS7pirmJlwWWcOEY="
+  # GPG_PASSPHRASE
+  - secure: "DR4U1DbQBQyVfsKay6QHlQ//sZmQpvx/N0vkECtQqUtZuROBsoIwQj/s5Sc79VIIWjFQGLOaOaOKd8nC0s1Om0RTB2a1DdaUIrBlsLP7vfVeGwCE4FsJdrIY3mDfg7V+gQenbzvhqtupx7/+l2lQcXQb84Jqd9cECjfRUpNy9l441oTlnmV9p8NiM6hkFI2t2SLZAmTjkzIaaOZO16jBKgoALTd+OpGvmYLUYDlNXwpSI0sdyzWMIEudREDAWUsJRGiOFUdy4AyfhZpfGHV2PhKo4wBNIZLH6l5Ifb3KKVtOeavgN4rQ5u+tNPI/PoRnyoTbHHBFe5ICjvZewwhxJPxlw7UOF4iPURlla+3QTvQCV1ptQHmJ7E/fZZ1jZbDIEb8se4XtLOk5Nxcfp6FTcKvVBAoo3mezONDxBSC2w3LnNtwPLRVtfH3BaqnEQwZ4yb5JGjFwgQ4mbMzc1fF6w+L26LgsoayUoykulKwaKvqk1BSyIVvC0/To6bIPUsqWACAIXFmlqhGt3aCQhoAAxF2uItGPBbMW/+KepOS0PRsM13TrZDdqc8TWiSsW8KdfsvswR1dT7BDfsNtwNCCSx2m2qFxdxwAd81IcVtVgcpQiWj6R9378SUnTr4KtM2UCMumV5xcpn5/rZ2pqQSOFVl5M6xiiOK4Q9It7whapZUc="
+
+cache:
+  directories:
+    - '$HOME/.m2/repository'
+    - '$HOME/.sonar/cache'
+

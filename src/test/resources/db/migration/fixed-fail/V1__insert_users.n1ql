@@ -1,0 +1,8 @@
+INSERT INTO default (KEY, VALUE)
+  VALUES
+    ("user::Administrator",
+      {
+        "type": "admin",
+        "username": "Administrator",
+        "birthday": "01/09/1998"
+      });
