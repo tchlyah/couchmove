@@ -5,11 +5,11 @@ import com.github.couchmove.pojo.ChangeLog;
 import com.github.couchmove.pojo.Type;
 import com.github.couchmove.utils.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -32,15 +32,15 @@ public class ChangeLogFileService {
 
     private static final Logger logger = LoggerFactory.getLogger(ChangeLogFileService.class);
 
-    private static Pattern fileNamePattern = Pattern.compile("V([\\w.]+)__([\\w ]+)\\.?(\\w*)$");
+    private static Pattern fileNamePattern = Pattern.compile("V([\\w.]+)__([\\w ]+)\\.?(\\w*)/?$");
 
-    private final File changeFolder;
+    private final Path changePath;
 
     /**
      * @param changePath The resource path of the folder containing {@link ChangeLog}s
      */
     public ChangeLogFileService(String changePath) {
-        this.changeFolder = initializeFolder(changePath);
+        this.changePath = initializeFolder(changePath);
     }
 
     /**
@@ -48,25 +48,24 @@ public class ChangeLogFileService {
      *
      * @return An ordered list of {@link ChangeLog}s by {@link ChangeLog#version}
      */
-    public List<ChangeLog> fetch() {
-        logger.info("Reading from migration folder '{}'", changeFolder.getPath());
+    public List<ChangeLog> fetch() throws IOException {
+        logger.info("Reading from migration folder '{}'", changePath);
         SortedSet<ChangeLog> sortedChangeLogs = new TreeSet<>();
-        //noinspection ConstantConditions
-        for (File file : changeFolder.listFiles()) {
-            String fileName = file.getName();
+        Files.newDirectoryStream(changePath).forEach(path -> {
+            String fileName = path.getFileName().toString();
             Matcher matcher = fileNamePattern.matcher(fileName);
             if (matcher.matches()) {
                 ChangeLog changeLog = ChangeLog.builder()
                         .version(matcher.group(1))
                         .script(fileName)
                         .description(matcher.group(2).replace("_", " "))
-                        .type(getChangeLogType(file))
-                        .checksum(FileUtils.calculateChecksum(file, DESIGN_DOC.getExtension(), N1QL.getExtension()))
+                        .type(getChangeLogType(path))
+                        .checksum(FileUtils.calculateChecksum(path, DESIGN_DOC.getExtension(), N1QL.getExtension()))
                         .build();
                 logger.debug("Fetched one : {}", changeLog);
                 sortedChangeLogs.add(changeLog);
             }
-        }
+        });
         logger.info("Fetched {} change logs from migration folder", sortedChangeLogs.size());
         return Collections.unmodifiableList(new ArrayList<>(sortedChangeLogs));
     }
@@ -79,7 +78,7 @@ public class ChangeLogFileService {
      * @throws IOException if an I/O error occurs reading the file
      */
     public String readFile(String path) throws IOException {
-        return new String(Files.readAllBytes(resolve(path)));
+        return new String(IOUtils.toByteArray(resolve(path).toUri()));
     }
 
     /**
@@ -90,11 +89,11 @@ public class ChangeLogFileService {
      * @throws IOException if an I/O error occurs reading the files
      */
     public Map<String, String> readDocuments(String path) throws IOException {
-        return FileUtils.readFilesInDirectory(resolve(path).toFile(), JSON);
+        return FileUtils.readFilesInDirectory(resolve(path), JSON);
     }
 
     //<editor-fold desc="Helpers">
-    static File initializeFolder(String changePath) {
+    static Path initializeFolder(String changePath) {
         Path path;
         try {
             path = FileUtils.getPathFromResource(changePath);
@@ -103,29 +102,28 @@ public class ChangeLogFileService {
         } catch (IOException e) {
             throw new CouchmoveException("Unable to get change path '" + changePath + "'", e);
         }
-        File file = path.toFile();
-        if (!file.isDirectory()) {
+        if (!Files.isDirectory(path)) {
             throw new CouchmoveException("The change path '" + changePath + "' is not a directory");
         }
-        return file;
+        return path;
     }
 
     private Path resolve(String path) {
-        return changeFolder.toPath().resolve(path);
+        return changePath.resolve(path);
     }
 
     /**
      * Determines the {@link Type} of the file from its type and extension
      *
-     * @param file file to analyse
+     * @param path file to analyse
      * @return {@link Type} of the {@link ChangeLog} file
      */
     @NotNull
-    static Type getChangeLogType(File file) {
-        if (file.isDirectory()) {
+    static Type getChangeLogType(Path path) {
+        if (Files.isDirectory(path)) {
             return Type.DOCUMENTS;
         } else {
-            String extension = FilenameUtils.getExtension(file.getName()).toLowerCase();
+            String extension = FilenameUtils.getExtension(path.getFileName().toString()).toLowerCase();
             if (DESIGN_DOC.getExtension().equals(extension)) {
                 return DESIGN_DOC;
             }
@@ -133,7 +131,7 @@ public class ChangeLogFileService {
                 return N1QL;
             }
         }
-        throw new CouchmoveException("Unknown ChangeLog type : " + file.getName());
+        throw new CouchmoveException("Unknown ChangeLog type : " + path.getFileName().toString());
     }
     //</editor-fold>
 

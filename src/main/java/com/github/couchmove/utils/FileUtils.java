@@ -3,6 +3,7 @@ package com.github.couchmove.utils;
 import com.github.couchmove.exception.CouchmoveException;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
@@ -17,7 +18,10 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
+import static com.github.couchmove.utils.FunctionUtils.unchecked;
 import static org.apache.commons.io.IOUtils.toByteArray;
 
 /**
@@ -52,7 +56,6 @@ public class FileUtils {
             // Can not happen normally
             throw new RuntimeException(e);
         }
-        Path folder;
         if (uri.getScheme().equals("jar")) {
             FileSystem fileSystem;
             try {
@@ -60,81 +63,77 @@ public class FileUtils {
             } catch (FileSystemNotFoundException e) {
                 fileSystem = FileSystems.newFileSystem(uri, Collections.emptyMap());
             }
-            folder = fileSystem.getPath(resource);
+            Path path = fileSystem.getPath(resource);
+            String fullUri = resourceURL.getFile().substring(resourceURL.getFile().indexOf("!")).replaceAll("!", "");
+            return path.resolve(fullUri);
         } else {
-            folder = Paths.get(uri);
+            return Paths.get(uri);
         }
-        return folder;
     }
 
     /**
      * If the file is a Directory, calculate the checksum of all files in this directory (one level)
      * Else, calculate the checksum of the file matching extensions
      *
-     * @param file       file or folder
+     * @param filePath   file or folder
      * @param extensions of files to calculate checksum of
      * @return checksum
      */
-    public static String calculateChecksum(@NotNull File file, String... extensions) {
-        if (file == null || !file.exists()) {
+    public static String calculateChecksum(@NotNull Path filePath, String... extensions) {
+        if (filePath == null || !Files.exists(filePath)) {
             throw new CouchmoveException("File is null or doesn't exists");
         }
-        if (file.isDirectory()) {
-            //noinspection ConstantConditions
-            return Arrays.stream(file.listFiles())
-                    .filter(File::isFile)
-                    .filter(f -> Arrays.stream(extensions)
-                            .anyMatch(extension -> FilenameUtils
-                                    .getExtension(f.getName()).toLowerCase()
-                                    .equals(extension.toLowerCase())))
-                    .sorted(Comparator.comparing(File::getName))
+        if (Files.isDirectory(filePath)) {
+            return directoryStream(filePath, extensions)
+                    .sorted(Comparator.comparing(path -> path.getFileName().toString()))
                     .map(FileUtils::calculateChecksum)
                     .reduce(String::concat)
                     .map(DigestUtils::sha256Hex)
                     .orElse(null);
         }
         try {
-            return DigestUtils.sha256Hex(toByteArray(file.toURI()));
+            return DigestUtils.sha256Hex(toByteArray(filePath.toUri()));
         } catch (IOException e) {
-            throw new CouchmoveException("Unable to calculate file checksum '" + file.getName() + "'");
+            throw new CouchmoveException("Unable to calculate file checksum '" + filePath.getFileName().toString() + "'");
         }
     }
 
     /**
      * Read files content from a (@link File}
      *
-     * @param file       The directory containing files to read
-     * @param extensions The extensions of the files to read
+     * @param directoryPath The directory containing files to read
+     * @param extensions    The extensions of the files to read
      * @return {@link Map} which keys represents the name (with extension), and values the content of read files
-     * @throws IOException if an I/O error occurs reading the files
      */
-    public static Map<String, String> readFilesInDirectory(@NotNull File file, String... extensions) throws IOException {
-        if (file == null || !file.exists()) {
+    public static Map<String, String> readFilesInDirectory(Path directoryPath, String... extensions) {
+        if (directoryPath == null || !Files.exists(directoryPath)) {
             throw new IllegalArgumentException("File is null or doesn't exists");
         }
-        if (!file.isDirectory()) {
-            throw new IllegalArgumentException("'" + file.getPath() + "' is not a directory");
+        if (!Files.isDirectory(directoryPath)) {
+            throw new IllegalArgumentException("'" + directoryPath + "' is not a directory");
         }
+        return directoryStream(directoryPath, extensions)
+                .collect(Collectors.toMap(path -> path.getFileName().toString(),
+                        unchecked(path -> new String(IOUtils.toByteArray(path.toUri())))));
+    }
+
+    /**
+     * Get a path Stream to iterate over all regular files matching extensions in the directory
+     *
+     * @param directoryPath the path to the directory
+     * @param extensions    The extensions of the files to iterate over
+     * @return a new Stream object
+     */
+    private static Stream<Path> directoryStream(@NotNull Path directoryPath, String... extensions) {
         try {
-            //noinspection ConstantConditions
-            return Arrays.stream(file.listFiles())
-                    .filter(File::isFile)
-                    .filter(f -> Arrays.stream(extensions)
+            return StreamSupport.stream(Files.newDirectoryStream(directoryPath).spliterator(), false)
+                    .filter(Files::isRegularFile)
+                    .filter(path -> Arrays.stream(extensions)
                             .anyMatch(extension -> FilenameUtils
-                                    .getExtension(f.getName()).toLowerCase()
-                                    .equals(extension.toLowerCase())))
-                    .collect(Collectors.toMap(File::getName, f -> {
-                        try {
-                            return new String(Files.readAllBytes(f.toPath()));
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }));
-        } catch (RuntimeException e) {
-            if (e.getCause() instanceof IOException) {
-                throw (IOException) e.getCause();
-            }
-            throw e;
+                                    .getExtension(path.getFileName().toString()).toLowerCase()
+                                    .equals(extension.toLowerCase())));
+        } catch (IOException e) {
+            throw new CouchmoveException("Unable to read directory '" + directoryPath + "'", e);
         }
     }
 }

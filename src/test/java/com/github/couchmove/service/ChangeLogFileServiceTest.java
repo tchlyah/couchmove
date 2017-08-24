@@ -8,6 +8,8 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -38,22 +40,22 @@ public class ChangeLogFileServiceTest {
     @Test
     public void should_get_right_type_from_file() {
         // For folder
-        Assert.assertEquals(Type.DOCUMENTS, ChangeLogFileService.getChangeLogType(FileUtils.getTempDirectory()));
+        Assert.assertEquals(Type.DOCUMENTS, ChangeLogFileService.getChangeLogType(FileUtils.getTempDirectory().toPath()));
         // For JSON file
-        Assert.assertEquals(Type.DESIGN_DOC, ChangeLogFileService.getChangeLogType(new File("toto.json")));
-        Assert.assertEquals(Type.DESIGN_DOC, ChangeLogFileService.getChangeLogType(new File("toto.JSON")));
+        Assert.assertEquals(Type.DESIGN_DOC, ChangeLogFileService.getChangeLogType(Paths.get("toto.json")));
+        Assert.assertEquals(Type.DESIGN_DOC, ChangeLogFileService.getChangeLogType(Paths.get("toto.JSON")));
         // For N1QL files
-        Assert.assertEquals(Type.N1QL, ChangeLogFileService.getChangeLogType(new File("toto.n1ql")));
-        Assert.assertEquals(Type.N1QL, ChangeLogFileService.getChangeLogType(new File("toto.N1QL")));
+        Assert.assertEquals(Type.N1QL, ChangeLogFileService.getChangeLogType(Paths.get("toto.n1ql")));
+        Assert.assertEquals(Type.N1QL, ChangeLogFileService.getChangeLogType(Paths.get("toto.N1QL")));
     }
 
     @Test(expected = CouchmoveException.class)
     public void should_throw_exception_when_unknown_file_type() {
-        ChangeLogFileService.getChangeLogType(new File("toto"));
+        ChangeLogFileService.getChangeLogType(Paths.get("toto"));
     }
 
     @Test
-    public void should_fetch_changeLogs() {
+    public void should_fetch_changeLogs() throws IOException {
         List<ChangeLog> changeLogs = Stream.of(
                 ChangeLog.builder()
                         .type(Type.N1QL)

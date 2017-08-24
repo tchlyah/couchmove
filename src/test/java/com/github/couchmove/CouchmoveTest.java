@@ -13,6 +13,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import java.io.IOException;
+
 import static com.github.couchmove.pojo.Status.*;
 import static com.github.couchmove.pojo.Type.*;
 import static com.github.couchmove.utils.TestUtils.*;
@@ -47,7 +49,7 @@ public class CouchmoveTest {
     }
 
     @Test
-    public void should_release_lock_after_migration() {
+    public void should_release_lock_after_migration() throws IOException {
         when(lockServiceMock.acquireLock()).thenReturn(true);
         when(fileServiceMock.fetch()).thenReturn(newArrayList(getRandomChangeLog()));
         when(dbServiceMock.fetchAndCompare(any())).thenReturn(emptyList());
