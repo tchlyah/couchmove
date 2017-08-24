@@ -11,6 +11,7 @@ import org.junit.runner.RunWith;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Map;
 
 import static com.github.couchmove.pojo.Type.DESIGN_DOC;
@@ -56,19 +57,19 @@ public class FileUtilsTest {
     @Test
     @UseDataProvider("fileProvider")
     public void should_calculate_checksum_of_file_or_folder(String path, String expectedChecksum) throws Exception {
-        Assert.assertEquals(path, expectedChecksum, FileUtils.calculateChecksum(FileUtils.getPathFromResource(path).toFile(), DESIGN_DOC.getExtension(), N1QL.getExtension()));
+        Assert.assertEquals(path, expectedChecksum, FileUtils.calculateChecksum(FileUtils.getPathFromResource(path), DESIGN_DOC.getExtension(), N1QL.getExtension()));
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void should_read_files_failed_if_not_exists() throws Exception {
-        FileUtils.readFilesInDirectory(new File(""));
+        FileUtils.readFilesInDirectory(new File(TestUtils.getRandomString()).toPath());
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void should_read_files_failed_if_not_directory() throws Exception {
         File temp = File.createTempFile(getRandomString(), "");
         temp.deleteOnExit();
-        FileUtils.readFilesInDirectory(temp);
+        FileUtils.readFilesInDirectory(temp.toPath());
     }
 
     @Test
@@ -88,7 +89,7 @@ public class FileUtilsTest {
         Files.write(getRandomString().getBytes(), File.createTempFile(getRandomString(), ".txt", tempDir));
 
         // When we read files in this directory with extension filter
-        Map<String, String> result = FileUtils.readFilesInDirectory(tempDir, "json", "n1ql");
+        Map<String, String> result = FileUtils.readFilesInDirectory(tempDir.toPath(), "json", "n1ql");
 
         // Then we should have file content matching this extension
         Assert.assertEquals(2, result.size());
