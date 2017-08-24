@@ -14,7 +14,7 @@
 
     <groupId>com.github.differentway</groupId>
     <artifactId>couchmove</artifactId>
-    <version>1.0.1</version>
+    <version>develop-SNAPSHOT</version>
 
     <licenses>
         <license>
