@@ -125,7 +125,7 @@ public class CouchmoveIntegrationTest extends AbstractCouchbaseTest {
         assertThrows(couchmove::migrate, CouchmoveException.class);
 
         // Then new ChangeLog is executed
-        assertLike(changeLogRepository.findOne(PREFIX_ID + "1"), "1", 1, "insert users", N1QL, "V1__insert_users.n1ql", "efcc80f763e48e2a1d5b6689351ad1b4d678c70bebc0c0975a2d19f94e938f18", EXECUTED);
+        assertLike(changeLogRepository.findOne(PREFIX_ID + "1"), "1", 1, "insert users", N1QL, "V1__insert_users.n1ql", "a4b082eb19477034060ba02f60a7d40f39588e8d6fa6618b26b94cc6916d6cc3", EXECUTED);
 
         assertEquals(new User("admin", "Administrator", "01/09/1998"), userRepository.findOne("user::Administrator"));
 
@@ -148,10 +148,10 @@ public class CouchmoveIntegrationTest extends AbstractCouchbaseTest {
         couchmove.migrate();
 
         // Then it should be success
-        assertLike(changeLogRepository.findOne(PREFIX_ID + "1"), "1", 1, "insert users", N1QL, "V1__insert_users.n1ql", "efcc80f763e48e2a1d5b6689351ad1b4d678c70bebc0c0975a2d19f94e938f18", EXECUTED);
+        assertLike(changeLogRepository.findOne(PREFIX_ID + "1"), "1", 1, "insert users", N1QL, "V1__insert_users.n1ql", "a4b082eb19477034060ba02f60a7d40f39588e8d6fa6618b26b94cc6916d6cc3", EXECUTED);
 
         assertLike(changeLogRepository.findOne(PREFIX_ID + "2"), "2", 2, "invalid request", N1QL, "V2__invalid_request.n1ql",
-                "778c69b64c030eec8b33eb6ebf955954a3dfa20cab489021a2b71d445d5c3e54", EXECUTED);
+                "8fd2066ea5ad4e4151cc5b1262542455f41e7bcefe447cbcfbc004c6fe3bac12", EXECUTED);
 
         assertEquals(new User("user", "toto", "06/03/1997"), userRepository.findOne("user::toto"));
     }
