@@ -46,7 +46,9 @@ public class Utils {
                 Method method = c.getDeclaredMethod(methodName);
                 Object o = c.newInstance();
                 Object name = method.invoke(o);
-                return name == null ? "unknown" : name.toString();
+                if (name != null) {
+                    return name.toString();
+                }
             } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InstantiationException | InvocationTargetException e) {
                 logger.error("Unable to get actual user name", e);
             }
