@@ -47,6 +47,7 @@ public class ChangeLogFileService {
      * Reads all the {@link ChangeLog}s contained in the Change Folder, ignoring unhandled files
      *
      * @return An ordered list of {@link ChangeLog}s by {@link ChangeLog#version}
+     * @throws IOException if unable to open changePath
      */
     public List<ChangeLog> fetch() throws IOException {
         logger.info("Reading from migration folder '{}'", changePath);
