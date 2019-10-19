@@ -93,9 +93,9 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.github.differentway</groupId>
-            <artifactId>couchbase-testcontainer</artifactId>
-            <version>1.12</version>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>couchbase</artifactId>
+            <version>1.12.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>

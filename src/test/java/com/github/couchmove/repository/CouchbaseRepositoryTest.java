@@ -4,14 +4,14 @@ import com.couchbase.client.java.error.CASMismatchException;
 import com.couchbase.client.java.error.DocumentAlreadyExistsException;
 import com.couchbase.client.java.query.util.IndexInfo;
 import com.couchbase.client.java.view.DesignDocument;
+import com.github.couchmove.utils.CouchbaseTest;
 import com.github.couchmove.exception.CouchmoveException;
 import com.github.couchmove.pojo.ChangeLog;
 import com.github.couchmove.pojo.Type;
 import com.github.couchmove.utils.TestUtils;
 import org.junit.Assert;
-import org.junit.BeforeClass;
+import org.junit.Before;
 import org.junit.Test;
-import org.testcontainers.couchbase.AbstractCouchbaseTest;
 
 import java.util.List;
 import java.util.Random;
@@ -23,16 +23,16 @@ import static java.lang.String.format;
 
 /**
  * @author ctayeb
- *         Created on 28/05/2017
+ * Created on 28/05/2017
  */
-public class CouchbaseRepositoryTest extends AbstractCouchbaseTest {
+public class CouchbaseRepositoryTest extends CouchbaseTest {
 
     public static final String INDEX_NAME = "name";
 
     private static CouchbaseRepository<ChangeLog> repository;
 
-    @BeforeClass
-    public static void setUp() {
+    @Before
+    public void setUp() {
         repository = new CouchbaseRepositoryImpl<>(getBucket(), ChangeLog.class);
     }
 
@@ -123,7 +123,7 @@ public class CouchbaseRepositoryTest extends AbstractCouchbaseTest {
         repository.importDesignDoc(name, design_doc);
 
         // Then it should be saved
-        DesignDocument designDocument = AbstractCouchbaseTest.getBucket().bucketManager().getDesignDocument(name);
+        DesignDocument designDocument = getBucket().bucketManager().getDesignDocument(name);
         Assert.assertNotNull(designDocument);
     }
 

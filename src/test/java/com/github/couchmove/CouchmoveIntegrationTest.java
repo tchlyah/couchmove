@@ -10,9 +10,9 @@ import com.github.couchmove.pojo.User;
 import com.github.couchmove.repository.CouchbaseRepository;
 import com.github.couchmove.repository.CouchbaseRepositoryImpl;
 import com.github.couchmove.service.ChangeLogDBService;
-import org.junit.BeforeClass;
+import com.github.couchmove.utils.CouchbaseTest;
+import org.junit.Before;
 import org.junit.Test;
-import org.testcontainers.couchbase.AbstractCouchbaseTest;
 
 import java.util.Date;
 import java.util.List;
@@ -30,7 +30,7 @@ import static org.junit.Assert.*;
  * @author ctayeb
  *         Created on 05/06/2017
  */
-public class CouchmoveIntegrationTest extends AbstractCouchbaseTest {
+public class CouchmoveIntegrationTest extends CouchbaseTest {
 
     public static final String DB_MIGRATION = "db/migration/";
 
@@ -40,8 +40,8 @@ public class CouchmoveIntegrationTest extends AbstractCouchbaseTest {
 
     private static CouchbaseRepositoryImpl<User> userRepository;
 
-    @BeforeClass
-    public static void init() {
+    @Before
+    public void init() {
         changeLogRepository = new CouchbaseRepositoryImpl<>(getBucket(), ChangeLog.class);
         changeLogDBService = new ChangeLogDBService(getBucket());
         userRepository = new CouchbaseRepositoryImpl<>(getBucket(), User.class);

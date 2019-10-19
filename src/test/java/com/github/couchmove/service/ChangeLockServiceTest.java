@@ -1,6 +1,6 @@
 package com.github.couchmove.service;
 
-import org.testcontainers.couchbase.AbstractCouchbaseTest;
+import com.github.couchmove.utils.CouchbaseTest;
 import com.github.couchmove.exception.CouchmoveException;
 import org.junit.Test;
 
@@ -12,7 +12,7 @@ import static org.junit.Assert.assertTrue;
  * @author ctayeb
  *         Created on 29/05/2017
  */
-public class ChangeLockServiceTest extends AbstractCouchbaseTest {
+public class ChangeLockServiceTest extends CouchbaseTest {
 
     @Test
     public void should_acquire_and_release_lock() {
