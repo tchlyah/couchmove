@@ -3,6 +3,7 @@ package com.github.couchmove;
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.query.N1qlQuery;
 import com.couchbase.client.java.view.DesignDocument;
+import com.g00fy2.versioncompare.Version;
 import com.github.couchmove.exception.CouchmoveException;
 import com.github.couchmove.pojo.ChangeLog;
 import com.github.couchmove.pojo.Status;
@@ -130,19 +131,19 @@ public class Couchmove {
         logger.info("Applying change logs...");
         int migrationCount = 0;
         // Get version and order of last executed changeLog
-        String lastVersion = "";
+        Version lastVersion = new Version("0");
         int lastOrder = 0;
         Optional<ChangeLog> lastExecutedChangeLog = changeLogs.stream()
                 .filter(c -> c.getStatus() == EXECUTED)
                 .max(Comparator.naturalOrder());
         if (lastExecutedChangeLog.isPresent()) {
-            lastVersion = lastExecutedChangeLog.get().getVersion();
+            lastVersion = new Version(lastExecutedChangeLog.get().getVersion());
             lastOrder = lastExecutedChangeLog.get().getOrder();
         }
 
         for (ChangeLog changeLog : changeLogs) {
             if (changeLog.getStatus() == EXECUTED) {
-                lastVersion = changeLog.getVersion();
+                lastVersion = new Version(changeLog.getVersion());
                 lastOrder = changeLog.getOrder();
             }
         }
@@ -160,7 +161,7 @@ public class Couchmove {
                 continue;
             }
 
-            if (lastVersion.compareTo(changeLog.getVersion()) >= 0) {
+            if (new Version(changeLog.getVersion()).isLowerThan(lastVersion)) {
                 logger.warn("ChangeLog '{}::{}' version is lower than last executed one '{}'. Skipping", changeLog.getVersion(), changeLog.getDescription(), lastVersion);
                 changeLog.setStatus(SKIPPED);
                 dbService.save(changeLog);
@@ -169,7 +170,7 @@ public class Couchmove {
 
             executeMigration(changeLog, lastOrder + 1);
             lastOrder++;
-            lastVersion = changeLog.getVersion();
+            lastVersion = new Version(changeLog.getVersion());
             migrationCount++;
         }
         if (migrationCount == 0) {

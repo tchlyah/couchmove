@@ -1,6 +1,7 @@
 package com.github.couchmove.pojo;
 
 import com.couchbase.client.java.Bucket;
+import com.g00fy2.versioncompare.Version;
 import lombok.*;
 import org.jetbrains.annotations.NotNull;
 
@@ -73,6 +74,17 @@ public class ChangeLog extends CouchbaseEntity implements Comparable<ChangeLog> 
 
     @Override
     public int compareTo(@NotNull ChangeLog o) {
-        return version == null ? 0 : version.compareTo(o.version);
+        Version v1 = new Version(this.version);
+        Version v2 = new Version(o.version);
+
+        if (v1.isEqual(v2)) {
+            return 0;
+        }
+
+        if (v1.isHigherThan(v2)) {
+            return 1;
+        }
+
+        return -1;
     }
 }
