@@ -5,7 +5,8 @@ import com.github.couchmove.pojo.ChangeLog;
 import com.github.couchmove.pojo.Type;
 import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.IOException;
@@ -15,6 +16,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.github.couchmove.utils.TestUtils.getRandomString;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * @author ctayeb
@@ -22,19 +24,20 @@ import static com.github.couchmove.utils.TestUtils.getRandomString;
  */
 public class ChangeLogFileServiceTest {
 
-    @Test(expected = CouchmoveException.class)
+    @Test
     public void should_fail_if_path_does_not_exists() {
         String folderPath;
         //noinspection StatementWithEmptyBody
         while (new File(folderPath = getRandomString()).exists()) ;
-        ChangeLogFileService.initializeFolder(folderPath);
+        String finalFolderPath = folderPath;
+        assertThrows(CouchmoveException.class, () -> ChangeLogFileService.initializeFolder(finalFolderPath));
     }
 
-    @Test(expected = CouchmoveException.class)
+    @Test
     public void should_fail_if_path_is_not_directory() throws Exception {
         File tempFile = File.createTempFile(getRandomString(), "");
         tempFile.deleteOnExit();
-        ChangeLogFileService.initializeFolder(tempFile.getPath());
+        assertThrows(CouchmoveException.class, () -> ChangeLogFileService.initializeFolder(tempFile.getPath()));
     }
 
     @Test
@@ -49,9 +52,9 @@ public class ChangeLogFileServiceTest {
         Assert.assertEquals(Type.N1QL, ChangeLogFileService.getChangeLogType(Paths.get("toto.N1QL")));
     }
 
-    @Test(expected = CouchmoveException.class)
+    @Test
     public void should_throw_exception_when_unknown_file_type() {
-        ChangeLogFileService.getChangeLogType(Paths.get("toto"));
+        assertThrows(CouchmoveException.class, () -> ChangeLogFileService.getChangeLogType(Paths.get("toto")));
     }
 
     @Test

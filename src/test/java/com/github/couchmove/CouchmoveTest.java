@@ -7,10 +7,13 @@ import com.github.couchmove.service.ChangeLockService;
 import com.github.couchmove.service.ChangeLogDBService;
 import com.github.couchmove.service.ChangeLogFileService;
 import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import java.io.IOException;
@@ -20,6 +23,7 @@ import static com.github.couchmove.pojo.Type.*;
 import static com.github.couchmove.utils.TestUtils.*;
 import static com.google.common.collect.Lists.newArrayList;
 import static java.util.Collections.emptyList;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 
@@ -27,7 +31,7 @@ import static org.mockito.Mockito.*;
  * @author ctayeb
  *         Created on 04/06/2017
  */
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class CouchmoveTest {
 
     @InjectMocks
@@ -45,7 +49,7 @@ public class CouchmoveTest {
     @Test
     public void should_migration_fail_if_lock_not_acquired() {
         when(lockServiceMock.acquireLock()).thenReturn(false);
-        assertThrows(() -> couchmove.migrate(), CouchmoveException.class);
+        assertThrows(CouchmoveException.class, () -> couchmove.migrate());
     }
 
     @Test
@@ -136,7 +140,7 @@ public class CouchmoveTest {
                 .type(N1QL)
                 .build();
         doThrow(CouchmoveException.class).when(couchmove).executeMigration(changeLog, 1);
-        assertThrows(() -> couchmove.executeMigration(newArrayList(changeLog)), CouchmoveException.class);
+        assertThrows(CouchmoveException.class, () -> couchmove.executeMigration(newArrayList(changeLog)));
     }
 
     @Test
@@ -162,7 +166,7 @@ public class CouchmoveTest {
                 .type(DOCUMENTS)
                 .build();
         doThrow(CouchmoveException.class).when(dbServiceMock).importDocuments(any());
-        assertThrows(() -> couchmove.executeMigration(changeLog, 1), CouchmoveException.class);
+        assertThrows(CouchmoveException.class, () -> couchmove.executeMigration(changeLog, 1));
         verify(dbServiceMock).save(changeLog);
         Assert.assertNotNull(changeLog.getTimestamp());
         Assert.assertNotNull(changeLog.getDuration());

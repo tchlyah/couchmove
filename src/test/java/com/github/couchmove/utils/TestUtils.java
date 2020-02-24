@@ -1,7 +1,6 @@
 package com.github.couchmove.utils;
 
 import com.github.couchmove.pojo.ChangeLog;
-import com.github.couchmove.pojo.Status;
 import com.github.couchmove.pojo.Type;
 import org.assertj.core.api.Assertions;
 import org.jetbrains.annotations.NotNull;
@@ -37,18 +36,5 @@ public class TestUtils {
                 .duration(RANDOM.nextLong())
                 .checksum(getRandomString())
                 .build();
-    }
-
-    @SafeVarargs
-    public static void assertThrows(Runnable runnable, Class<? extends Throwable>... throwables) {
-        boolean exceptionOccurred = false;
-        try {
-            runnable.run();
-            // Then an exception should raise
-        } catch (Exception e) {
-            Assertions.assertThat(e).isOfAnyClassIn(throwables);
-            exceptionOccurred = true;
-        }
-        assertTrue("Expected exception occurred", exceptionOccurred);
     }
 }

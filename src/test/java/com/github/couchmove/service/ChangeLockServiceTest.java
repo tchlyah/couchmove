@@ -2,9 +2,9 @@ package com.github.couchmove.service;
 
 import com.github.couchmove.utils.CouchbaseTest;
 import com.github.couchmove.exception.CouchmoveException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static com.github.couchmove.utils.TestUtils.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -60,7 +60,7 @@ public class ChangeLockServiceTest extends CouchbaseTest {
         ChangeLockService changeLockService2 = new ChangeLockService(getBucket());
 
         // Then it should fails
-        assertThrows(changeLockService2::releaseLock, CouchmoveException.class);
+        assertThrows(CouchmoveException.class, changeLockService2::releaseLock);
 
         // When an other process force release the lock
         changeLockService2.forceReleaseLock();

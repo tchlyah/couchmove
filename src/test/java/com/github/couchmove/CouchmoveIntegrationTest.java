@@ -11,8 +11,9 @@ import com.github.couchmove.repository.CouchbaseRepository;
 import com.github.couchmove.repository.CouchbaseRepositoryImpl;
 import com.github.couchmove.service.ChangeLogDBService;
 import com.github.couchmove.utils.CouchbaseTest;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Date;
 import java.util.List;
@@ -23,12 +24,12 @@ import java.util.stream.Stream;
 import static com.github.couchmove.pojo.Status.*;
 import static com.github.couchmove.pojo.Type.*;
 import static com.github.couchmove.service.ChangeLogDBService.PREFIX_ID;
-import static com.github.couchmove.utils.TestUtils.assertThrows;
 import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * @author ctayeb
- *         Created on 05/06/2017
+ * Created on 05/06/2017
  */
 public class CouchmoveIntegrationTest extends CouchbaseTest {
 
@@ -40,7 +41,7 @@ public class CouchmoveIntegrationTest extends CouchbaseTest {
 
     private static CouchbaseRepositoryImpl<User> userRepository;
 
-    @Before
+    @BeforeEach
     public void init() {
         changeLogRepository = new CouchbaseRepositoryImpl<>(getBucket(), ChangeLog.class);
         changeLogDBService = new ChangeLogDBService(getBucket());
@@ -122,7 +123,7 @@ public class CouchmoveIntegrationTest extends CouchbaseTest {
         Couchmove couchmove = new Couchmove(getBucket(), DB_MIGRATION + "fail");
 
         // When we launch migration, then an exception should be raised
-        assertThrows(couchmove::migrate, CouchmoveException.class);
+        assertThrows(CouchmoveException.class, couchmove::migrate);
 
         // Then new ChangeLog is executed
         assertLike(changeLogRepository.findOne(PREFIX_ID + "1"), "1", 1, "insert users", N1QL, "V1__insert_users.n1ql", "a4b082eb19477034060ba02f60a7d40f39588e8d6fa6618b26b94cc6916d6cc3", EXECUTED);
@@ -139,7 +140,7 @@ public class CouchmoveIntegrationTest extends CouchbaseTest {
         Couchmove couchmove = new Couchmove(getBucket(), DB_MIGRATION + "fail");
 
         // When we launch migration, then an exception should be raised
-        assertThrows(couchmove::migrate, CouchmoveException.class);
+        assertThrows(CouchmoveException.class, couchmove::migrate);
 
         // Given a Couchmove instance configured for fixed-fail migration folder
         couchmove = new Couchmove(getBucket(), DB_MIGRATION + "fixed-fail");

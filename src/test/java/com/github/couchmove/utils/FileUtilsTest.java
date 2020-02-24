@@ -1,28 +1,27 @@
 package com.github.couchmove.utils;
 
 import com.google.common.io.Files;
-import com.tngtech.java.junit.dataprovider.DataProvider;
-import com.tngtech.java.junit.dataprovider.DataProviderRunner;
-import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static com.github.couchmove.pojo.Type.DESIGN_DOC;
 import static com.github.couchmove.pojo.Type.N1QL;
 import static com.github.couchmove.utils.TestUtils.getRandomString;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * @author ctayeb
  * Created on 02/06/2017
  */
-@RunWith(DataProviderRunner.class)
 public class FileUtilsTest {
 
     public static final String DB_MIGRATION_PATH = "db/migration/success/";
@@ -45,31 +44,30 @@ public class FileUtilsTest {
         Assert.assertTrue(file.isDirectory());
     }
 
-    @DataProvider
-    public static Object[][] fileProvider() {
-        return new Object[][]{
-                {DB_MIGRATION_PATH + "V1.1__insert_users", "99a4aaf12e7505286afe2a5b074f7ebabd496f3ea8c4093116efd3d096c430a8"},
-                {DB_MIGRATION_PATH + "V1__create_index.n1ql", "1a417b9f5787e52a46bc65bcd801e8f3f096e63ebcf4b0a17410b16458124af3"},
-                {DB_MIGRATION_PATH + "V2__user.json", "22df7f8496c21a3e1f3fbd241592628ad6a07797ea5d501df8ab6c65c94dbb79"}
-        };
+    private static Stream<Arguments> fileSource() {
+        return Stream.of(
+                Arguments.of(DB_MIGRATION_PATH + "V1.1__insert_users", "99a4aaf12e7505286afe2a5b074f7ebabd496f3ea8c4093116efd3d096c430a8"),
+                Arguments.of(DB_MIGRATION_PATH + "V1__create_index.n1ql", "1a417b9f5787e52a46bc65bcd801e8f3f096e63ebcf4b0a17410b16458124af3"),
+                Arguments.of(DB_MIGRATION_PATH + "V2__user.json", "22df7f8496c21a3e1f3fbd241592628ad6a07797ea5d501df8ab6c65c94dbb79")
+        );
     }
 
-    @Test
-    @UseDataProvider("fileProvider")
+    @ParameterizedTest
+    @MethodSource("fileSource")
     public void should_calculate_checksum_of_file_or_folder(String path, String expectedChecksum) throws Exception {
         Assert.assertEquals(path, expectedChecksum, FileUtils.calculateChecksum(FileUtils.getPathFromResource(path), DESIGN_DOC.getExtension(), N1QL.getExtension()));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void should_read_files_failed_if_not_exists() throws Exception {
-        FileUtils.readFilesInDirectory(new File(TestUtils.getRandomString()).toPath());
+        assertThrows(IllegalArgumentException.class, () -> FileUtils.readFilesInDirectory(new File(TestUtils.getRandomString()).toPath()));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void should_read_files_failed_if_not_directory() throws Exception {
         File temp = File.createTempFile(getRandomString(), "");
         temp.deleteOnExit();
-        FileUtils.readFilesInDirectory(temp.toPath());
+        assertThrows(IllegalArgumentException.class, () -> FileUtils.readFilesInDirectory(temp.toPath()));
     }
 
     @Test

@@ -6,13 +6,13 @@ import com.github.couchmove.repository.CouchbaseRepository;
 import com.google.common.collect.Lists;
 import org.assertj.core.api.Assertions;
 import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.BeforeClass;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,23 +21,24 @@ import static com.github.couchmove.pojo.Status.FAILED;
 import static com.github.couchmove.service.ChangeLogDBService.PREFIX_ID;
 import static com.github.couchmove.service.ChangeLogDBService.extractRequests;
 import static com.github.couchmove.utils.TestUtils.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
 /**
  * @author ctayeb
- *         Created on 03/06/2017
+ * Created on 03/06/2017
  */
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class ChangeLogDBServiceTest {
 
     @InjectMocks
     private ChangeLogDBService service = new ChangeLogDBService(null);
 
     @Mock
-    private CouchbaseRepository<ChangeLog> repository;
+    private static CouchbaseRepository<ChangeLog> repository;
 
-    @Before
-    public void init() {
+    @BeforeClass
+    public static void init() {
         when(repository.getBucketName()).thenReturn("default");
     }
 
@@ -74,7 +75,7 @@ public class ChangeLogDBServiceTest {
         Assert.assertNotNull(changeLogs.get(1).getCas());
     }
 
-    @Test(expected = CouchmoveException.class)
+    @Test
     public void should_fetch_fail_when_checksum_does_not_match() {
         // Given a changeLog stored on DB
         ChangeLog dbChangeLog = getRandomChangeLog();
@@ -85,10 +86,8 @@ public class ChangeLogDBServiceTest {
         changeLog.setVersion(dbChangeLog.getVersion());
         changeLog.setChecksum(getRandomString());
 
-        // When we call service with the later changeLog
-        service.fetchAndCompare(Lists.newArrayList(changeLog));
-
-        // Then an exception should rise
+        // When we call service with the later changeLog, Then an exception should rise
+        assertThrows(CouchmoveException.class, () -> service.fetchAndCompare(Lists.newArrayList(changeLog)));
     }
 
     @Test

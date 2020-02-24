@@ -4,22 +4,22 @@ import com.couchbase.client.java.error.CASMismatchException;
 import com.couchbase.client.java.error.DocumentAlreadyExistsException;
 import com.couchbase.client.java.query.util.IndexInfo;
 import com.couchbase.client.java.view.DesignDocument;
-import com.github.couchmove.utils.CouchbaseTest;
 import com.github.couchmove.exception.CouchmoveException;
 import com.github.couchmove.pojo.ChangeLog;
 import com.github.couchmove.pojo.Type;
+import com.github.couchmove.utils.CouchbaseTest;
 import com.github.couchmove.utils.TestUtils;
 import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
 
-import static com.github.couchmove.utils.TestUtils.assertThrows;
 import static com.github.couchmove.utils.TestUtils.getRandomString;
 import static java.lang.String.format;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * @author ctayeb
@@ -31,7 +31,7 @@ public class CouchbaseRepositoryTest extends CouchbaseTest {
 
     private static CouchbaseRepository<ChangeLog> repository;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         repository = new CouchbaseRepositoryImpl<>(getBucket(), ChangeLog.class);
     }
@@ -75,7 +75,7 @@ public class CouchbaseRepositoryTest extends CouchbaseTest {
         Assert.assertNull(repository.findOne(id));
     }
 
-    @Test(expected = DocumentAlreadyExistsException.class)
+    @Test
     public void should_not_replace_entity_without_cas() {
         // Given a changeLog saved on couchbase
         ChangeLog changeLog = TestUtils.getRandomChangeLog();
@@ -86,10 +86,10 @@ public class CouchbaseRepositoryTest extends CouchbaseTest {
         changeLog.setCas(null);
 
         // Then we should have exception upon saving with cas operation
-        repository.checkAndSave(id, changeLog);
+        assertThrows(DocumentAlreadyExistsException.class, () -> repository.checkAndSave(id, changeLog));
     }
 
-    @Test(expected = CASMismatchException.class)
+    @Test
     public void should_not_insert_entity_with_different_cas() {
         // Given a changeLog saved on couchbase
         ChangeLog changeLog = TestUtils.getRandomChangeLog();
@@ -104,7 +104,7 @@ public class CouchbaseRepositoryTest extends CouchbaseTest {
         savedChangeLog.setCas(new Random().nextLong());
 
         // Then we should have exception upon saving
-        repository.checkAndSave(id, savedChangeLog);
+        assertThrows(CASMismatchException.class, () -> repository.checkAndSave(id, savedChangeLog));
     }
 
     @Test
@@ -158,7 +158,7 @@ public class CouchbaseRepositoryTest extends CouchbaseTest {
         String request = format("CREATE INDEX `%s`", INDEX_NAME);
 
         // When we execute the query
-        assertThrows(() -> repository.query(request), CouchmoveException.class);
+        assertThrows(CouchmoveException.class, () -> repository.query(request));
     }
 
     @Test
@@ -167,7 +167,7 @@ public class CouchbaseRepositoryTest extends CouchbaseTest {
         String request = format("CREATE INDEX `%s` on toto(%s)", INDEX_NAME, INDEX_NAME);
 
         // When we execute the query
-        assertThrows(() -> repository.query(request), CouchmoveException.class);
+        assertThrows(CouchmoveException.class, () -> repository.query(request));
     }
 
     @Test
