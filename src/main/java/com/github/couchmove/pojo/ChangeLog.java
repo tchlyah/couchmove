@@ -1,19 +1,21 @@
 package com.github.couchmove.pojo;
 
 import com.couchbase.client.java.Bucket;
-import com.g00fy2.versioncompare.Version;
+import com.vdurmont.semver4j.Semver;
+import com.vdurmont.semver4j.SemverException;
 import lombok.*;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Date;
 
+import static com.vdurmont.semver4j.Semver.SemverType.LOOSE;
 import static lombok.AccessLevel.PRIVATE;
 
 /**
  * a {@link CouchbaseEntity} representing a change in Couchbase {@link Bucket}
  *
  * @author ctayeb
- *         Created on 27/05/2017
+ * Created on 27/05/2017
  */
 @AllArgsConstructor
 @NoArgsConstructor(access = PRIVATE)
@@ -74,17 +76,10 @@ public class ChangeLog extends CouchbaseEntity implements Comparable<ChangeLog> 
 
     @Override
     public int compareTo(@NotNull ChangeLog o) {
-        Version v1 = new Version(this.version);
-        Version v2 = new Version(o.version);
-
-        if (v1.isEqual(v2)) {
-            return 0;
+        try {
+            return new Semver(version, LOOSE).compareTo(new Semver(o.version, LOOSE));
+        } catch (SemverException e) {
+            return version.compareTo(o.version);
         }
-
-        if (v1.isHigherThan(v2)) {
-            return 1;
-        }
-
-        return -1;
     }
 }

@@ -3,7 +3,6 @@ package com.github.couchmove;
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.query.N1qlQuery;
 import com.couchbase.client.java.view.DesignDocument;
-import com.g00fy2.versioncompare.Version;
 import com.github.couchmove.exception.CouchmoveException;
 import com.github.couchmove.pojo.ChangeLog;
 import com.github.couchmove.pojo.Status;
@@ -131,22 +130,10 @@ public class Couchmove {
         logger.info("Applying change logs...");
         int migrationCount = 0;
         // Get version and order of last executed changeLog
-        Version lastVersion = new Version("0");
-        int lastOrder = 0;
-        Optional<ChangeLog> lastExecutedChangeLog = changeLogs.stream()
+        ChangeLog lastExecutedChangeLog = changeLogs.stream()
                 .filter(c -> c.getStatus() == EXECUTED)
-                .max(Comparator.naturalOrder());
-        if (lastExecutedChangeLog.isPresent()) {
-            lastVersion = new Version(lastExecutedChangeLog.get().getVersion());
-            lastOrder = lastExecutedChangeLog.get().getOrder();
-        }
-
-        for (ChangeLog changeLog : changeLogs) {
-            if (changeLog.getStatus() == EXECUTED) {
-                lastVersion = new Version(changeLog.getVersion());
-                lastOrder = changeLog.getOrder();
-            }
-        }
+                .max(Comparator.naturalOrder())
+                .orElse(ChangeLog.builder().version("0").order(0).build());
 
         for (ChangeLog changeLog : changeLogs) {
             if (changeLog.getStatus() == EXECUTED) {
@@ -161,16 +148,15 @@ public class Couchmove {
                 continue;
             }
 
-            if (new Version(changeLog.getVersion()).isLowerThan(lastVersion)) {
-                logger.warn("ChangeLog '{}::{}' version is lower than last executed one '{}'. Skipping", changeLog.getVersion(), changeLog.getDescription(), lastVersion);
+            if (changeLog.compareTo(lastExecutedChangeLog) <= 0) {
+                logger.warn("ChangeLog '{}::{}' version is lower than last executed one '{}'. Skipping", changeLog.getVersion(), changeLog.getDescription(), lastExecutedChangeLog.getVersion());
                 changeLog.setStatus(SKIPPED);
                 dbService.save(changeLog);
                 continue;
             }
 
-            executeMigration(changeLog, lastOrder + 1);
-            lastOrder++;
-            lastVersion = new Version(changeLog.getVersion());
+            executeMigration(changeLog, lastExecutedChangeLog.getOrder() + 1);
+            lastExecutedChangeLog = changeLog;
             migrationCount++;
         }
         if (migrationCount == 0) {
@@ -188,7 +174,7 @@ public class Couchmove {
      * </ul>
      *
      * @param changeLog {@link ChangeLog} to execute
-     * @param order the order to set if the execution was successful
+     * @param order     the order to set if the execution was successful
      * @throws CouchmoveException if the execution fail
      */
     void executeMigration(ChangeLog changeLog, int order) {

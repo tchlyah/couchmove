@@ -40,13 +40,6 @@
         </developer>
     </developers>
 
-    <repositories>
-        <repository>
-            <id>bintray-g00fy2</id>
-            <url>https://dl.bintray.com/g00fy2/maven</url>
-        </repository>
-    </repositories>
-
     <dependencies>
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -138,9 +131,9 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.g00fy2</groupId>
-            <artifactId>versioncompare</artifactId>
-            <version>1.3.4</version>
+            <groupId>com.vdurmont</groupId>
+            <artifactId>semver4j</artifactId>
+            <version>3.1.0</version>
         </dependency>
     </dependencies>
 

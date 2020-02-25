@@ -1,20 +1,29 @@
 package com.github.couchmove.pojo;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
-import static org.junit.Assert.assertEquals;
+import java.util.stream.Stream;
+
+import static org.assertj.core.api.StrictAssertions.assertThat;
 
 public class ChangeLogTest {
 
-    @Test
-    public void should_compare_version_properly() {
+    @SuppressWarnings("unused")
+    private static Stream<Arguments> compareTo() {
+        return Stream.of(
+                Arguments.of("0", "0.1", -1),
+                Arguments.of("0.9", "0.11", -1),
+                Arguments.of("0.11", "0.9", 1),
+                Arguments.of("0.9", "0.9", 0),
+                Arguments.of("20200203153040", "20200203153041", -1)
+        );
+    }
 
-        ChangeLog changeLog1 = ChangeLog.builder().version("0.9").build();
-        ChangeLog changeLog2 = ChangeLog.builder().version("0.11").build();
-        ChangeLog changeLog3 = ChangeLog.builder().version("0.9").build();
-
-        assertEquals(-1, changeLog1.compareTo(changeLog2));
-        assertEquals(1, changeLog2.compareTo(changeLog1));
-        assertEquals(0, changeLog1.compareTo(changeLog3));
+    @ParameterizedTest
+    @MethodSource
+    public void compareTo(String v1, String v2, int expected) {
+        assertThat(ChangeLog.builder().version(v1).build().compareTo(ChangeLog.builder().version(v2).build())).isEqualTo(expected);
     }
 }
