@@ -50,6 +50,7 @@ public interface CouchbaseRepository<E extends CouchbaseEntity> {
      * <br>
      * - Otherwise it return null
      * </p>
+     *
      * @param id the id of the document
      * @return the found and converted {@link CouchbaseEntity} with CAS set, or null if absent
      */
@@ -77,6 +78,21 @@ public interface CouchbaseRepository<E extends CouchbaseEntity> {
      * @param request {@link N1qlQuery} in String format
      */
     void query(String request);
+
+    /**
+     * Inserts a Full Text Search Index definition
+     *
+     * @param name    name of the FTS index to insert
+     * @param content the content of the FTS index to insert
+     */
+    void importFtsIndex(String name, String content);
+
+    /**
+     * Verify if a Full Text Search Index exists
+     *
+     * @param name name of the FTS index to verify
+     */
+    boolean isFtsIndexExists(String name);
 
     /**
      * @return name of the repository Couchbase {@link Bucket}

@@ -8,17 +8,23 @@ import com.github.couchmove.exception.CouchmoveException;
 import com.github.couchmove.pojo.ChangeLog;
 import com.github.couchmove.pojo.Type;
 import com.github.couchmove.utils.CouchbaseTest;
+import com.github.couchmove.utils.FileUtils;
 import com.github.couchmove.utils.TestUtils;
+import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
 
+import static com.github.couchmove.CouchmoveIntegrationTest.DB_MIGRATION;
 import static com.github.couchmove.utils.TestUtils.getRandomString;
 import static java.lang.String.format;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
@@ -29,11 +35,13 @@ public class CouchbaseRepositoryTest extends CouchbaseTest {
 
     public static final String INDEX_NAME = "name";
 
+    public static final String TEST = "test";
+
     private static CouchbaseRepository<ChangeLog> repository;
 
     @BeforeEach
     public void setUp() {
-        repository = new CouchbaseRepositoryImpl<>(getBucket(), ChangeLog.class);
+        repository = new CouchbaseRepositoryImpl<>(getBucket(), TEST_BUCKET, DEFAULT_PASSWORD, ChangeLog.class);
     }
 
     @Test
@@ -125,6 +133,23 @@ public class CouchbaseRepositoryTest extends CouchbaseTest {
         // Then it should be saved
         DesignDocument designDocument = getBucket().bucketManager().getDesignDocument(name);
         Assert.assertNotNull(designDocument);
+    }
+
+    @Test
+    public void should_import_fts_index() throws IOException {
+        // Given a fts index json definition file
+        String ftsIndex = IOUtils.toString(FileUtils.getPathFromResource(DB_MIGRATION + "success/V2__name.fts").toUri(), Charset.defaultCharset());
+
+        // When we import it
+        repository.importFtsIndex(TEST, ftsIndex);
+
+        // Then it should be created
+        assertThat(repository.isFtsIndexExists(TEST)).isTrue();
+    }
+
+    @Test
+    public void should_check_fts_index_not_exists() {
+        assertThat(repository.isFtsIndexExists("toto")).isFalse();
     }
 
     @Test

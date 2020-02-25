@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
  * Service for fetching and executing {@link ChangeLog}s
  *
  * @author ctayeb
- *         Created on 03/06/2017
+ * Created on 03/06/2017
  */
 public class ChangeLogDBService {
 
@@ -29,8 +29,8 @@ public class ChangeLogDBService {
 
     private CouchbaseRepository<ChangeLog> repository;
 
-    public ChangeLogDBService(Bucket bucket) {
-        this.repository = new CouchbaseRepositoryImpl<>(bucket, ChangeLog.class);
+    public ChangeLogDBService(Bucket bucket, String username, String password) {
+        this.repository = new CouchbaseRepositoryImpl<>(bucket, username, password, ChangeLog.class);
     }
 
     /**
@@ -127,6 +127,17 @@ public class ChangeLogDBService {
         logger.info("Importing {} documents", documents.size());
         documents.forEach((fileName, content) ->
                 repository.save(FilenameUtils.getBaseName(fileName), content));
+    }
+
+    /**
+     * Inserts a Full Text Search Index definition
+     *
+     * @param name    name of the FTS index to insert
+     * @param content the content of the FTS index to insert
+     */
+    public void importFtsIndex(String name, String content) {
+        logger.info("Inserting FTS Index '{}'...", name);
+        repository.importFtsIndex(name, content);
     }
 
     /**

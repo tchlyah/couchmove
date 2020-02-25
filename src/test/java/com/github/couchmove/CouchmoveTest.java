@@ -29,13 +29,13 @@ import static org.mockito.Mockito.*;
 
 /**
  * @author ctayeb
- *         Created on 04/06/2017
+ * Created on 04/06/2017
  */
 @ExtendWith(MockitoExtension.class)
 public class CouchmoveTest {
 
     @InjectMocks
-    private Couchmove couchmove = new Couchmove(mockBucket());
+    private Couchmove couchmove = new Couchmove(mockBucket(), null, null);
 
     @Mock
     private ChangeLockService lockServiceMock;

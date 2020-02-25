@@ -123,16 +123,8 @@ public class ChangeLogFileService {
     static Type getChangeLogType(Path path) {
         if (Files.isDirectory(path)) {
             return Type.DOCUMENTS;
-        } else {
-            String extension = FilenameUtils.getExtension(path.getFileName().toString()).toLowerCase();
-            if (DESIGN_DOC.getExtension().equals(extension)) {
-                return DESIGN_DOC;
-            }
-            if (N1QL.getExtension().equals(extension)) {
-                return N1QL;
-            }
         }
-        throw new CouchmoveException("Unknown ChangeLog type : " + path.getFileName().toString());
+        return Type.fromExtension(FilenameUtils.getExtension(path.getFileName().toString()).toLowerCase());
     }
     //</editor-fold>
 

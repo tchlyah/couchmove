@@ -22,7 +22,6 @@ import org.slf4j.LoggerFactory;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import static com.github.couchmove.pojo.Status.*;
@@ -54,22 +53,26 @@ public class Couchmove {
     /**
      * Initialize a {@link Couchmove} instance with default migration path : {@value DEFAULT_MIGRATION_PATH}
      *
-     * @param bucket Couchbase {@link Bucket} to execute the migrations on
+     * @param bucket   Couchbase {@link Bucket} to execute the migrations on
+     * @param username
+     * @param password
      */
-    public Couchmove(Bucket bucket) {
-        this(bucket, DEFAULT_MIGRATION_PATH);
+    public Couchmove(Bucket bucket, String username, String password) {
+        this(bucket, username, password, DEFAULT_MIGRATION_PATH);
     }
 
     /**
      * Initialize a {@link Couchmove} instance
      *
      * @param bucket     Couchbase {@link Bucket} to execute the migrations on
+     * @param username
+     * @param password
      * @param changePath absolute or relative path of the migration folder containing {@link ChangeLog}
      */
-    public Couchmove(Bucket bucket, String changePath) {
+    public Couchmove(Bucket bucket, String username, String password, String changePath) {
         logger.info("Connected to bucket '{}'", bucketName = bucket.name());
-        lockService = new ChangeLockService(bucket);
-        dbService = new ChangeLogDBService(bucket);
+        lockService = new ChangeLockService(bucket, username, password);
+        dbService = new ChangeLogDBService(bucket, username, password);
         fileService = new ChangeLogFileService(changePath);
     }
 
@@ -202,6 +205,7 @@ public class Couchmove {
      *     <li> {@link Type#DOCUMENTS} : Imports all {@value Constants#JSON} documents contained in the folder
      *     <li> {@link Type#N1QL} : Execute all {@link N1qlQuery} contained in the {@value Constants#N1QL} file
      *     <li> {@link Type#DESIGN_DOC} : Imports {@link DesignDocument} contained in the {@value Constants#JSON} document
+     *     <li> {@link Type#FTS} : Imports Full Text Search index definition contained in the {@value Constants#FTS} document
      * </ul>
      *
      * @param changeLog {@link ChangeLog} to apply
@@ -218,6 +222,9 @@ public class Couchmove {
                     break;
                 case DESIGN_DOC:
                     dbService.importDesignDoc(changeLog.getDescription().replace(" ", "_"), fileService.readFile(changeLog.getScript()));
+                    break;
+                case FTS:
+                    dbService.importFtsIndex(changeLog.getDescription().replace(" ", "_"), fileService.readFile(changeLog.getScript()));
                     break;
                 default:
                     throw new IllegalArgumentException("Unknown ChangeLog Type '" + changeLog.getType() + "'");

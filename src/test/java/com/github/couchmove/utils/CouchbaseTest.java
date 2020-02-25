@@ -6,7 +6,7 @@ import org.testcontainers.couchbase.CouchbaseContainer;
 
 public abstract class CouchbaseTest extends AbstractCouchbaseTest {
 
-    private static CouchbaseContainer container = initCouchbaseContainer("couchbase/server:6.0.3");
+    private static CouchbaseContainer container = initCouchbaseContainer("couchbase:6.5.0").withFts(true);
 
     @Override
     protected CouchbaseContainer getCouchbaseContainer() {

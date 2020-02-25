@@ -32,7 +32,7 @@ import static org.mockito.Mockito.when;
 public class ChangeLogDBServiceTest {
 
     @InjectMocks
-    private ChangeLogDBService service = new ChangeLogDBService(null);
+    private ChangeLogDBService service = new ChangeLogDBService(null, null, null);
 
     @Mock
     private static CouchbaseRepository<ChangeLog> repository;

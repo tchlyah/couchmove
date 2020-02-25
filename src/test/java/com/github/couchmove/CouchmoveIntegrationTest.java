@@ -11,7 +11,7 @@ import com.github.couchmove.repository.CouchbaseRepository;
 import com.github.couchmove.repository.CouchbaseRepositoryImpl;
 import com.github.couchmove.service.ChangeLogDBService;
 import com.github.couchmove.utils.CouchbaseTest;
-import org.junit.jupiter.api.AfterEach;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -24,6 +24,7 @@ import java.util.stream.Stream;
 import static com.github.couchmove.pojo.Status.*;
 import static com.github.couchmove.pojo.Type.*;
 import static com.github.couchmove.service.ChangeLogDBService.PREFIX_ID;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.*;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -43,26 +44,26 @@ public class CouchmoveIntegrationTest extends CouchbaseTest {
 
     @BeforeEach
     public void init() {
-        changeLogRepository = new CouchbaseRepositoryImpl<>(getBucket(), ChangeLog.class);
-        changeLogDBService = new ChangeLogDBService(getBucket());
-        userRepository = new CouchbaseRepositoryImpl<>(getBucket(), User.class);
+        changeLogRepository = new CouchbaseRepositoryImpl<>(getBucket(), TEST_BUCKET, DEFAULT_PASSWORD, ChangeLog.class);
+        changeLogDBService = new ChangeLogDBService(getBucket(), TEST_BUCKET, DEFAULT_PASSWORD);
+        userRepository = new CouchbaseRepositoryImpl<>(getBucket(), TEST_BUCKET, DEFAULT_PASSWORD, User.class);
     }
 
     @Test
     public void should_migrate_successfully() {
         // Given a Couchmove instance configured for success migration folder
-        Couchmove couchmove = new Couchmove(getBucket(), DB_MIGRATION + "success");
+        Couchmove couchmove = getCouchmove("success");
 
         // When we launch migration
         couchmove.migrate();
 
         // Then all changeLogs should be inserted in DB
-        List<ChangeLog> changeLogs = Stream.of("0", "0.1", "1")
+        List<ChangeLog> changeLogs = Stream.of("0", "0.1", "1", "2")
                 .map(version -> PREFIX_ID + version)
                 .map(changeLogRepository::findOne)
                 .collect(Collectors.toList());
 
-        assertEquals(3, changeLogs.size());
+        assertEquals(4, changeLogs.size());
         assertLike(changeLogs.get(0),
                 "0", 1, "create index", N1QL, "V0__create_index.n1ql",
                 "1a417b9f5787e52a46bc65bcd801e8f3f096e63ebcf4b0a17410b16458124af3",
@@ -72,8 +73,13 @@ public class CouchmoveIntegrationTest extends CouchbaseTest {
                 "99a4aaf12e7505286afe2a5b074f7ebabd496f3ea8c4093116efd3d096c430a8",
                 EXECUTED);
         assertLike(changeLogs.get(2),
-                "1", 3, "user", Type.DESIGN_DOC, "V1__user.json",
+                "1", 3, "user", DESIGN_DOC, "V1__user.json",
                 "22df7f8496c21a3e1f3fbd241592628ad6a07797ea5d501df8ab6c65c94dbb79",
+                EXECUTED);
+
+        assertLike(changeLogs.get(3),
+                "2", 4, "name", FTS, "V2__name.fts",
+                "6ef9c3cc661804f7f0eb489e678971619a81b5457cff9355e28db9dbf835ea0a",
                 EXECUTED);
 
         // And successfully executed
@@ -92,6 +98,9 @@ public class CouchmoveIntegrationTest extends CouchbaseTest {
         // Design Document inserted
         DesignDocument designDocument = getBucket().bucketManager().getDesignDocument("user");
         assertNotNull(designDocument);
+
+        // FTS index inserted
+        assertThat(userRepository.isFtsIndexExists("name")).isTrue();
     }
 
     @Test
@@ -111,7 +120,7 @@ public class CouchmoveIntegrationTest extends CouchbaseTest {
                 .build());
 
         // When we execute migration in skip migration folder
-        new Couchmove(getBucket(), DB_MIGRATION + "skip").migrate();
+        getCouchmove("skip").migrate();
 
         // Then the old ChangeLog is marked as skipped
         assertLike(changeLogRepository.findOne(PREFIX_ID + "1.2"), "1.2", null, "type", DESIGN_DOC, "V1.2__type.json", "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", SKIPPED);
@@ -120,7 +129,7 @@ public class CouchmoveIntegrationTest extends CouchbaseTest {
     @Test
     public void should_migration_fail_on_exception() {
         // Given a Couchmove instance configured for fail migration folder
-        Couchmove couchmove = new Couchmove(getBucket(), DB_MIGRATION + "fail");
+        Couchmove couchmove = getCouchmove("fail");
 
         // When we launch migration, then an exception should be raised
         assertThrows(CouchmoveException.class, couchmove::migrate);
@@ -137,13 +146,13 @@ public class CouchmoveIntegrationTest extends CouchbaseTest {
     @Test
     public void should_fixed_failed_migration_pass() {
         // Given a Couchmove instance configured for fail migration folder
-        Couchmove couchmove = new Couchmove(getBucket(), DB_MIGRATION + "fail");
+        Couchmove couchmove = getCouchmove("fail");
 
         // When we launch migration, then an exception should be raised
         assertThrows(CouchmoveException.class, couchmove::migrate);
 
         // Given a Couchmove instance configured for fixed-fail migration folder
-        couchmove = new Couchmove(getBucket(), DB_MIGRATION + "fixed-fail");
+        couchmove = getCouchmove("fixed-fail");
 
         // When we relaunch migration
         couchmove.migrate();
@@ -174,7 +183,7 @@ public class CouchmoveIntegrationTest extends CouchbaseTest {
                 .build());
 
         // When we execute migration in update migration folder
-        new Couchmove(getBucket(), DB_MIGRATION + "update").migrate();
+        getCouchmove("update").migrate();
 
         // Then executed changeLog description updated
         assertLike(changeLogRepository.findOne(PREFIX_ID + "1"), "1", 1, "create index", N1QL, "V1__create_index.n1ql", "69eb9007c910c2b9cac46044a54de5e933b768ae874c6408356372576ab88dbd", EXECUTED);
@@ -196,4 +205,8 @@ public class CouchmoveIntegrationTest extends CouchbaseTest {
         }
     }
 
+    @NotNull
+    private Couchmove getCouchmove(String skip) {
+        return new Couchmove(getBucket(), TEST_BUCKET, DEFAULT_PASSWORD, DB_MIGRATION + skip);
+    }
 }

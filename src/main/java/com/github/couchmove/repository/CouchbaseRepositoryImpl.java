@@ -2,6 +2,11 @@ package com.github.couchmove.repository;
 
 import com.couchbase.client.core.BackpressureException;
 import com.couchbase.client.core.RequestCancelledException;
+import com.couchbase.client.core.message.ResponseStatus;
+import com.couchbase.client.core.message.search.GetSearchIndexRequest;
+import com.couchbase.client.core.message.search.GetSearchIndexResponse;
+import com.couchbase.client.core.message.search.UpsertSearchIndexRequest;
+import com.couchbase.client.core.message.search.UpsertSearchIndexResponse;
 import com.couchbase.client.core.time.Delay;
 import com.couchbase.client.deps.com.fasterxml.jackson.core.JsonProcessingException;
 import com.couchbase.client.deps.com.fasterxml.jackson.databind.ObjectMapper;
@@ -39,7 +44,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * @author ctayeb
- *         Created on 27/05/2017
+ * Created on 27/05/2017
  */
 // For tests
 @SuppressWarnings("ConstantConditions")
@@ -55,6 +60,10 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
     public static final String BUCKET_PARAM = "bucket";
 
     private final Bucket bucket;
+
+    private final String username;
+
+    private final String password;
 
     private final Class<E> entityClass;
 
@@ -150,6 +159,32 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
         } catch (Exception e) {
             throw new CouchmoveException("Unable to execute n1ql request", e);
         }
+    }
+
+    @Override
+    public void importFtsIndex(String name, String jsonContent) {
+        jsonContent = injectParameters(jsonContent);
+        logger.trace("Import FTS index : \n'{}'", jsonContent);
+        UpsertSearchIndexResponse response = bucket.core()
+                .send(new UpsertSearchIndexRequest(name, jsonContent, username, password))
+                .map(UpsertSearchIndexResponse.class::cast)
+                .toBlocking()
+                .single();
+
+        if (!response.status().isSuccess()) {
+            String msg = response.payload();
+            throw new CouchmoveException("Could not store FTS index : " + msg);
+        }
+    }
+
+    @Override
+    public boolean isFtsIndexExists(String name) {
+        GetSearchIndexResponse response = bucket.core()
+                .send(new GetSearchIndexRequest(name, username, password))
+                .map(GetSearchIndexResponse.class::cast)
+                .toBlocking()
+                .single();
+        return response.status() == ResponseStatus.EXISTS || response.status() == ResponseStatus.SUCCESS;
     }
 
     String injectParameters(String statement) {
