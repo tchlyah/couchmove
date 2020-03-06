@@ -13,6 +13,10 @@ public class ChangeLogTest {
     @SuppressWarnings("unused")
     private static Stream<Arguments> compareTo() {
         return Stream.of(
+                Arguments.of(null, null, 0),
+                Arguments.of(null, "0", -1),
+                Arguments.of("0", null, 1),
+                Arguments.of("0", "0", 0),
                 Arguments.of("0", "0.1", -1),
                 Arguments.of("0.9", "0.11", -1),
                 Arguments.of("0.11", "0.9", 1),

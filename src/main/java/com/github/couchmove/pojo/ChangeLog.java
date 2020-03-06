@@ -76,6 +76,15 @@ public class ChangeLog extends CouchbaseEntity implements Comparable<ChangeLog> 
 
     @Override
     public int compareTo(@NotNull ChangeLog o) {
+        if (version == null && o.version == null) {
+            return 0;
+        }
+        if (version == null) {
+            return -1;
+        }
+        if (o.version == null) {
+            return 1;
+        }
         try {
             return new Semver(version, LOOSE).compareTo(new Semver(o.version, LOOSE));
         } catch (SemverException e) {

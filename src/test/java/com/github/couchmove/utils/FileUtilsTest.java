@@ -28,7 +28,7 @@ public class FileUtilsTest {
 
     @Test
     public void should_get_file_path_from_resource() throws Exception {
-        Path path = FileUtils.getPathFromResource(DB_MIGRATION_PATH + "V2__user.json");
+        Path path = FileUtils.getPathFromResource(DB_MIGRATION_PATH + "V1__user.json");
         Assert.assertNotNull(path);
         File file = path.toFile();
         Assert.assertTrue(file.exists());
@@ -46,9 +46,9 @@ public class FileUtilsTest {
 
     private static Stream<Arguments> fileSource() {
         return Stream.of(
-                Arguments.of(DB_MIGRATION_PATH + "V1.1__insert_users", "99a4aaf12e7505286afe2a5b074f7ebabd496f3ea8c4093116efd3d096c430a8"),
-                Arguments.of(DB_MIGRATION_PATH + "V1__create_index.n1ql", "1a417b9f5787e52a46bc65bcd801e8f3f096e63ebcf4b0a17410b16458124af3"),
-                Arguments.of(DB_MIGRATION_PATH + "V2__user.json", "22df7f8496c21a3e1f3fbd241592628ad6a07797ea5d501df8ab6c65c94dbb79")
+                Arguments.of(DB_MIGRATION_PATH + "V0.1__insert_users", "99a4aaf12e7505286afe2a5b074f7ebabd496f3ea8c4093116efd3d096c430a8"),
+                Arguments.of(DB_MIGRATION_PATH + "V0__create_index.n1ql", "1a417b9f5787e52a46bc65bcd801e8f3f096e63ebcf4b0a17410b16458124af3"),
+                Arguments.of(DB_MIGRATION_PATH + "V1__user.json", "22df7f8496c21a3e1f3fbd241592628ad6a07797ea5d501df8ab6c65c94dbb79")
         );
     }
 

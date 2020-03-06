@@ -57,22 +57,22 @@ public class CouchmoveIntegrationTest extends CouchbaseTest {
         couchmove.migrate();
 
         // Then all changeLogs should be inserted in DB
-        List<ChangeLog> changeLogs = Stream.of("1", "1.1", "2")
+        List<ChangeLog> changeLogs = Stream.of("0", "0.1", "1")
                 .map(version -> PREFIX_ID + version)
                 .map(changeLogRepository::findOne)
                 .collect(Collectors.toList());
 
         assertEquals(3, changeLogs.size());
         assertLike(changeLogs.get(0),
-                "1", 1, "create index", N1QL, "V1__create_index.n1ql",
+                "0", 1, "create index", N1QL, "V0__create_index.n1ql",
                 "1a417b9f5787e52a46bc65bcd801e8f3f096e63ebcf4b0a17410b16458124af3",
                 EXECUTED);
         assertLike(changeLogs.get(1),
-                "1.1", 2, "insert users", DOCUMENTS, "V1.1__insert_users",
+                "0.1", 2, "insert users", DOCUMENTS, "V0.1__insert_users",
                 "99a4aaf12e7505286afe2a5b074f7ebabd496f3ea8c4093116efd3d096c430a8",
                 EXECUTED);
         assertLike(changeLogs.get(2),
-                "2", 3, "user", Type.DESIGN_DOC, "V2__user.json",
+                "1", 3, "user", Type.DESIGN_DOC, "V1__user.json",
                 "22df7f8496c21a3e1f3fbd241592628ad6a07797ea5d501df8ab6c65c94dbb79",
                 EXECUTED);
 

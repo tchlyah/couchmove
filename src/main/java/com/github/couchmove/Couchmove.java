@@ -133,7 +133,7 @@ public class Couchmove {
         ChangeLog lastExecutedChangeLog = changeLogs.stream()
                 .filter(c -> c.getStatus() == EXECUTED)
                 .max(Comparator.naturalOrder())
-                .orElse(ChangeLog.builder().version("0").order(0).build());
+                .orElse(ChangeLog.builder().order(0).build());
 
         for (ChangeLog changeLog : changeLogs) {
             if (changeLog.getStatus() == EXECUTED) {

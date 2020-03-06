@@ -60,7 +60,7 @@ public class ChangeLogDBService {
                 continue;
             }
             if (dbChangeLog.getChecksum() == null) {
-                logger.warn("Change log version '{}' checksum reset");
+                logger.warn("Change log version '{}' checksum reset", version);
                 dbChangeLog.setChecksum(changeLog.getChecksum());
                 dbChangeLog.setCas(null);
             } else if (!dbChangeLog.getChecksum().equals(changeLog.getChecksum())) {
