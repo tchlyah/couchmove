@@ -41,7 +41,7 @@ public class CouchbaseRepositoryTest extends CouchbaseTest {
 
     @BeforeEach
     public void setUp() {
-        repository = new CouchbaseRepositoryImpl<>(getBucket(), TEST_BUCKET, DEFAULT_PASSWORD, ChangeLog.class);
+        repository = new CouchbaseRepositoryImpl<>(getBucket(), getCouchbaseContainer().getUsername(), getCouchbaseContainer().getPassword(), ChangeLog.class);
     }
 
     @Test

@@ -44,9 +44,9 @@ public class CouchmoveIntegrationTest extends CouchbaseTest {
 
     @BeforeEach
     public void init() {
-        changeLogRepository = new CouchbaseRepositoryImpl<>(getBucket(), TEST_BUCKET, DEFAULT_PASSWORD, ChangeLog.class);
-        changeLogDBService = new ChangeLogDBService(getBucket(), TEST_BUCKET, DEFAULT_PASSWORD);
-        userRepository = new CouchbaseRepositoryImpl<>(getBucket(), TEST_BUCKET, DEFAULT_PASSWORD, User.class);
+        changeLogRepository = new CouchbaseRepositoryImpl<>(getBucket(), getCouchbaseContainer().getUsername(), getCouchbaseContainer().getPassword(), ChangeLog.class);
+        changeLogDBService = new ChangeLogDBService(getBucket(), getCouchbaseContainer().getUsername(), getCouchbaseContainer().getPassword());
+        userRepository = new CouchbaseRepositoryImpl<>(getBucket(), getCouchbaseContainer().getUsername(), getCouchbaseContainer().getPassword(), User.class);
     }
 
     @Test
@@ -207,6 +207,6 @@ public class CouchmoveIntegrationTest extends CouchbaseTest {
 
     @NotNull
     private Couchmove getCouchmove(String skip) {
-        return new Couchmove(getBucket(), TEST_BUCKET, DEFAULT_PASSWORD, DB_MIGRATION + skip);
+        return new Couchmove(getBucket(), getCouchbaseContainer().getUsername(), getCouchbaseContainer().getPassword(), DB_MIGRATION + skip);
     }
 }

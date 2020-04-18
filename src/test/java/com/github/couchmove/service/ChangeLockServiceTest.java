@@ -35,7 +35,7 @@ public class ChangeLockServiceTest extends CouchbaseTest {
 
     @NotNull
     private ChangeLockService newChangeLockService() {
-        return new ChangeLockService(getBucket(), TEST_BUCKET, DEFAULT_PASSWORD);
+        return new ChangeLockService(getBucket(), getCouchbaseContainer().getUsername(), getCouchbaseContainer().getPassword());
     }
 
     @Test
