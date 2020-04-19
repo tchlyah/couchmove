@@ -5,7 +5,6 @@ import com.github.couchmove.pojo.ChangeLog;
 import com.github.couchmove.pojo.Type;
 import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
@@ -50,11 +49,14 @@ public class ChangeLogFileServiceTest {
         // For N1QL files
         Assert.assertEquals(Type.N1QL, ChangeLogFileService.getChangeLogType(Paths.get("toto.n1ql")));
         Assert.assertEquals(Type.N1QL, ChangeLogFileService.getChangeLogType(Paths.get("toto.N1QL")));
+        // For FTS files
+        Assert.assertEquals(Type.FTS, ChangeLogFileService.getChangeLogType(Paths.get("toto.fts")));
+        Assert.assertEquals(Type.FTS, ChangeLogFileService.getChangeLogType(Paths.get("toto.FtS")));
     }
 
     @Test
     public void should_throw_exception_when_unknown_file_type() {
-        assertThrows(CouchmoveException.class, () -> ChangeLogFileService.getChangeLogType(Paths.get("toto")));
+        assertThrows(CouchmoveException.class, () -> ChangeLogFileService.getChangeLogType(Paths.get("titi.toto")));
     }
 
     @Test
@@ -80,6 +82,13 @@ public class ChangeLogFileServiceTest {
                         .version("1")
                         .description("user")
                         .checksum("22df7f8496c21a3e1f3fbd241592628ad6a07797ea5d501df8ab6c65c94dbb79")
+                        .build(),
+                ChangeLog.builder()
+                        .type(Type.FTS)
+                        .script("V2__name.fts")
+                        .version("2")
+                        .description("name")
+                        .checksum("6ef9c3cc661804f7f0eb489e678971619a81b5457cff9355e28db9dbf835ea0a")
                         .build())
                 .collect(Collectors.toList());
         Assert.assertEquals(changeLogs, new ChangeLogFileService("db/migration/success").fetch());

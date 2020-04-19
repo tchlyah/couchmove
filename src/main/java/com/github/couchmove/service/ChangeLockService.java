@@ -18,7 +18,7 @@ import java.util.UUID;
  * Service for acquiring a pessimistic lock of a Couchbase {@link Bucket}
  *
  * @author ctayeb
- *         Created on 27/05/2017
+ * Created on 27/05/2017
  */
 public class ChangeLockService {
 
@@ -30,8 +30,8 @@ public class ChangeLockService {
 
     private String uuid;
 
-    public ChangeLockService(Bucket bucket) {
-        this.repository = new CouchbaseRepositoryImpl<>(bucket, ChangeLock.class);
+    public ChangeLockService(Bucket bucket, String username, String password) {
+        this.repository = new CouchbaseRepositoryImpl<>(bucket, username, password, ChangeLock.class);
     }
 
     /**
