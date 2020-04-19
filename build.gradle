@@ -1,0 +1,56 @@
+plugins {
+    id "java"
+    id "io.freefair.lombok" version "${lombok_version}"
+}
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
+group = "com.github.differentway"
+version = "2.0-SNAPSHOT"
+description = "Couchmove"
+sourceCompatibility = "1.8"
+
+test {
+    useJUnitPlatform()
+    exclude "**/*IT*", "**/*IntTest*"
+
+    testLogging {
+        events 'FAILED', 'SKIPPED'
+    }
+}
+check.dependsOn test
+
+task integrationTest(type: Test) {
+    useJUnitPlatform()
+    description = "Execute integration tests."
+    group = "verification"
+    include "**/*IT*", "**/*IntTest*"
+
+    testLogging {
+        events 'FAILED', 'SKIPPED'
+    }
+}
+check.dependsOn integrationTest
+
+dependencies {
+    implementation "com.couchbase.client:java-client:${couchbase_version}"
+    implementation "org.slf4j:slf4j-api:${slf4j_version}"
+    implementation "com.github.adedayo.intellij.sdk:annotations-java8:${intellij_annotations_version}"
+    implementation "commons-codec:commons-codec:${commons_codec_version}"
+    implementation "commons-io:commons-io:${commons_version}"
+    implementation "com.google.guava:guava:${guava_version}"
+    implementation "commons-lang:commons-lang:${commons_version}"
+    implementation "com.vdurmont:semver4j:${semver4j_version}"
+
+    testImplementation "org.junit.jupiter:junit-jupiter-api:${junit_version}"
+    testImplementation "org.junit.jupiter:junit-jupiter-engine:${junit_version}"
+    testImplementation "org.junit.jupiter:junit-jupiter-params:${junit_version}"
+    testImplementation "org.testcontainers:couchbase:${testcontainers_version}"
+    testImplementation "org.mockito:mockito-core:${mockito_version}"
+    testImplementation "org.mockito:mockito-junit-jupiter:${mockito_version}"
+    testImplementation "org.assertj:assertj-core:${assertj_version}"
+    testImplementation "ch.qos.logback:logback-classic:${logback_version}"
+}

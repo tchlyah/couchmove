@@ -75,6 +75,7 @@ local.properties
 # Gradle
 ######################
 .gradle/**
+build/
 
 ######################
 # Windows
@@ -91,4 +92,7 @@ Desktop.ini
 .DS_Store
 .svn
 
-
+######################
+# Lombok
+######################
+lombok.config
