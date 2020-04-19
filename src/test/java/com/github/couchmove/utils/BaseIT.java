@@ -13,7 +13,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.testcontainers.couchbase.BucketDefinition;
 import org.testcontainers.couchbase.CouchbaseContainer;
 
-public abstract class CouchbaseTest {
+public abstract class BaseIT {
 
     private static final String TEST_BUCKET = "test";
 

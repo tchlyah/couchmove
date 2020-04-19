@@ -7,7 +7,7 @@ import com.couchbase.client.java.view.DesignDocument;
 import com.github.couchmove.exception.CouchmoveException;
 import com.github.couchmove.pojo.ChangeLog;
 import com.github.couchmove.pojo.Type;
-import com.github.couchmove.utils.CouchbaseTest;
+import com.github.couchmove.utils.BaseIT;
 import com.github.couchmove.utils.FileUtils;
 import com.github.couchmove.utils.TestUtils;
 import org.apache.commons.io.IOUtils;
@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
 
-import static com.github.couchmove.CouchmoveIntegrationTest.DB_MIGRATION;
+import static com.github.couchmove.CouchmoveIT.DB_MIGRATION;
 import static com.github.couchmove.utils.TestUtils.getRandomString;
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * @author ctayeb
  * Created on 28/05/2017
  */
-public class CouchbaseRepositoryTest extends CouchbaseTest {
+public class CouchbaseRepositoryIT extends BaseIT {
 
     public static final String INDEX_NAME = "name";
 
