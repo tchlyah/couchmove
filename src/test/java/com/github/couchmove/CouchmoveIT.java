@@ -10,7 +10,7 @@ import com.github.couchmove.pojo.User;
 import com.github.couchmove.repository.CouchbaseRepository;
 import com.github.couchmove.repository.CouchbaseRepositoryImpl;
 import com.github.couchmove.service.ChangeLogDBService;
-import com.github.couchmove.utils.CouchbaseTest;
+import com.github.couchmove.utils.BaseIT;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * @author ctayeb
  * Created on 05/06/2017
  */
-public class CouchmoveIntegrationTest extends CouchbaseTest {
+public class CouchmoveIT extends BaseIT {
 
     public static final String DB_MIGRATION = "db/migration/";
 

@@ -1,7 +1,7 @@
 package com.github.couchmove.service;
 
 import com.github.couchmove.exception.CouchmoveException;
-import com.github.couchmove.utils.CouchbaseTest;
+import com.github.couchmove.utils.BaseIT;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -13,7 +13,7 @@ import static org.junit.Assert.assertTrue;
  * @author ctayeb
  * Created on 29/05/2017
  */
-public class ChangeLockServiceTest extends CouchbaseTest {
+public class ChangeLockServiceIT extends BaseIT {
 
     @Test
     public void should_acquire_and_release_lock() {
