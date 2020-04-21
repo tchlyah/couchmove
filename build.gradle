@@ -1,6 +1,8 @@
 plugins {
     id "java"
     id "io.freefair.lombok" version "${lombok_version}"
+    id "maven-publish"
+    id "signing"
 }
 
 repositories {
@@ -54,3 +56,5 @@ dependencies {
     testImplementation "org.assertj:assertj-core:${assertj_version}"
     testImplementation "ch.qos.logback:logback-classic:${logback_version}"
 }
+
+apply from: "gradle/publish.gradle"
