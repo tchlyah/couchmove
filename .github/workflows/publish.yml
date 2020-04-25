@@ -18,7 +18,7 @@ jobs:
     - name: Build with Gradle
       run: ./gradlew build
     - name: Publish to OSSRH
-      run: ./gradlew -Pversion=${{ github.event.release.tag_name }} publish
+      run: ./gradlew -Pversion=${{ github.event.release.tag_name }} publish closeAndReleaseRepository
       env:
         ORG_GRADLE_PROJECT_signingKey: ${{ secrets.SIGNING_KEY }}
         ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.SIGNING_PASSWORD }}

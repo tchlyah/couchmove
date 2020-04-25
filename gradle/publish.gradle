@@ -68,3 +68,8 @@ signing {
     useInMemoryPgpKeys(signingKey, signingPassword)
     sign publishing.publications.mavenJava
 }
+
+nexusStaging {
+    username = findProperty("ossrhUsername")
+    password = findProperty("ossrhToken")
+}
