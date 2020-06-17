@@ -6,10 +6,9 @@ import com.github.couchmove.repository.CouchbaseRepository;
 import com.google.common.collect.Lists;
 import org.assertj.core.api.Assertions;
 import org.junit.Assert;
-import org.junit.BeforeClass;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -22,6 +21,7 @@ import static com.github.couchmove.service.ChangeLogDBService.PREFIX_ID;
 import static com.github.couchmove.service.ChangeLogDBService.extractRequests;
 import static com.github.couchmove.utils.TestUtils.*;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 /**
@@ -31,15 +31,15 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 public class ChangeLogDBServiceTest {
 
-    @InjectMocks
-    private ChangeLogDBService service = new ChangeLogDBService(null, null, null);
-
     @Mock
-    private static CouchbaseRepository<ChangeLog> repository;
+    private CouchbaseRepository<ChangeLog> repository;
 
-    @BeforeClass
-    public static void init() {
-        when(repository.getBucketName()).thenReturn("default");
+    private ChangeLogDBService service;
+
+    @BeforeEach
+    public void init() {
+        lenient().when(repository.getBucketName()).thenReturn("default");
+        service = new ChangeLogDBService(repository);
     }
 
     @Test

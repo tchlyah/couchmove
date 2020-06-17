@@ -1,12 +1,10 @@
 package com.github.couchmove.utils;
 
 import com.couchbase.client.java.Bucket;
-import com.couchbase.client.java.CouchbaseCluster;
-import com.couchbase.client.java.env.CouchbaseEnvironment;
-import com.couchbase.client.java.env.DefaultCouchbaseEnvironment;
-import com.couchbase.client.java.query.N1qlParams;
-import com.couchbase.client.java.query.N1qlQuery;
-import com.couchbase.client.java.query.consistency.ScanConsistency;
+import com.couchbase.client.java.Cluster;
+import com.couchbase.client.java.manager.search.SearchIndexManager;
+import com.couchbase.client.java.query.QueryOptions;
+import com.couchbase.client.java.query.QueryScanConsistency;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
@@ -21,19 +19,14 @@ public abstract class BaseIT {
     private static final CouchbaseContainer couchbaseContainer = initCouchbaseContainer("couchbase:6.5.0");
 
     @Getter(lazy = true)
-    private static final CouchbaseEnvironment couchbaseEnvironment = initCouchbaseEnvironment();
+    private static final Cluster cluster = initCluster();
 
     @Getter(lazy = true)
-    private static final CouchbaseCluster couchbaseCluster = initCluster();
-
-    @Getter(lazy = true)
-    private static final Bucket bucket = getCouchbaseCluster().openBucket(TEST_BUCKET);
+    private static final Bucket bucket = getCluster().bucket(TEST_BUCKET);
 
     @AfterEach
     public void clear() {
-        getBucket().query(
-                N1qlQuery.simple(String.format("DELETE FROM `%s`", getBucket().name()),
-                        N1qlParams.build().consistency(ScanConsistency.STATEMENT_PLUS)));
+        getCluster().query(String.format("DELETE FROM `%s`", getBucket().name()), QueryOptions.queryOptions().scanConsistency(QueryScanConsistency.REQUEST_PLUS));
     }
 
     private static CouchbaseContainer initCouchbaseContainer(String imageName) {
@@ -43,17 +36,8 @@ public abstract class BaseIT {
         return container;
     }
 
-    private static DefaultCouchbaseEnvironment initCouchbaseEnvironment() {
-        return DefaultCouchbaseEnvironment.builder()
-                .bootstrapCarrierDirectPort(getCouchbaseContainer().getBootstrapCarrierDirectPort())
-                .bootstrapHttpDirectPort(getCouchbaseContainer().getBootstrapHttpDirectPort())
-                .build();
-    }
-
     @NotNull
-    private static CouchbaseCluster initCluster() {
-        CouchbaseCluster couchbaseCluster = CouchbaseCluster.create(getCouchbaseEnvironment(), getCouchbaseContainer().getContainerIpAddress());
-        couchbaseCluster.authenticate(getCouchbaseContainer().getUsername(), getCouchbaseContainer().getPassword());
-        return couchbaseCluster;
+    private static Cluster initCluster() {
+        return Cluster.connect(getCouchbaseContainer().getConnectionString(), getCouchbaseContainer().getUsername(), getCouchbaseContainer().getPassword());
     }
 }

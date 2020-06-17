@@ -1,7 +1,5 @@
 package com.github.couchmove.pojo;
 
-import com.couchbase.client.java.query.N1qlQuery;
-import com.couchbase.client.java.view.DesignDocument;
 import com.github.couchmove.exception.CouchmoveException;
 import lombok.Getter;
 
@@ -21,12 +19,12 @@ public enum Type {
     DOCUMENTS(""),
 
     /**
-     * json document representing a {@link DesignDocument}
+     * json document representing a {@link com.couchbase.client.java.manager.view.DesignDocument}
      */
     DESIGN_DOC(Constants.JSON),
 
     /**
-     * n1ql file containing a list of {@link N1qlQuery}
+     * n1ql file containing a list of N1ql queries
      */
     N1QL(Constants.N1QL),
 

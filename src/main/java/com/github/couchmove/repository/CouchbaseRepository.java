@@ -1,8 +1,7 @@
 package com.github.couchmove.repository;
 
 import com.couchbase.client.java.Bucket;
-import com.couchbase.client.java.query.N1qlQuery;
-import com.couchbase.client.java.view.DesignDocument;
+import com.couchbase.client.java.manager.view.DesignDocument;
 import com.github.couchmove.pojo.CouchbaseEntity;
 
 /**
@@ -31,8 +30,8 @@ public interface CouchbaseRepository<E extends CouchbaseEntity> {
      * @param id     the per-bucket unique document id
      * @param entity entity to convert and save
      * @return saved entity with CAS
-     * @throws com.couchbase.client.java.error.CASMismatchException           if the cas of entity is different from existing one
-     * @throws com.couchbase.client.java.error.DocumentAlreadyExistsException if the cas is not set and the document exists on couchbase
+     * @throws com.couchbase.client.core.error.CasMismatchException    if the cas of entity is different from existing one
+     * @throws com.couchbase.client.core.error.DocumentExistsException if the cas is not set and the document exists on couchbase
      */
     E checkAndSave(String id, E entity);
 
@@ -73,9 +72,9 @@ public interface CouchbaseRepository<E extends CouchbaseEntity> {
     void importDesignDoc(String name, String jsonContent);
 
     /**
-     * Queries Couchbase {@link Bucket} with a {@link N1qlQuery}
+     * Queries Couchbase {@link Bucket} with a N1ql Query
      *
-     * @param request {@link N1qlQuery} in String format
+     * @param request N1ql Query in String format
      */
     void query(String request);
 

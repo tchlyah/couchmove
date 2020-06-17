@@ -1,8 +1,9 @@
 package com.github.couchmove.service;
 
+import com.couchbase.client.core.error.CasMismatchException;
+import com.couchbase.client.core.error.DocumentExistsException;
 import com.couchbase.client.java.Bucket;
-import com.couchbase.client.java.error.CASMismatchException;
-import com.couchbase.client.java.error.DocumentAlreadyExistsException;
+import com.couchbase.client.java.Cluster;
 import com.github.couchmove.exception.CouchmoveException;
 import com.github.couchmove.pojo.ChangeLock;
 import com.github.couchmove.repository.CouchbaseRepository;
@@ -30,8 +31,8 @@ public class ChangeLockService {
 
     private String uuid;
 
-    public ChangeLockService(Bucket bucket, String username, String password) {
-        this.repository = new CouchbaseRepositoryImpl<>(bucket, username, password, ChangeLock.class);
+    public ChangeLockService(Bucket bucket, Cluster cluster) {
+        this.repository = new CouchbaseRepositoryImpl<>(bucket, cluster, ChangeLock.class);
     }
 
     /**
@@ -58,7 +59,7 @@ public class ChangeLockService {
         // Tries to save it with Optimistic locking
         try {
             repository.checkAndSave(LOCK_ID, lock);
-        } catch (CASMismatchException | DocumentAlreadyExistsException e) {
+        } catch (CasMismatchException | DocumentExistsException e) {
             // In case of exception, this means an other process got the lock, logging its information
             lock = repository.findOne(LOCK_ID);
             logger.warn("The bucket is already locked by '{}'", lock.getRunner());

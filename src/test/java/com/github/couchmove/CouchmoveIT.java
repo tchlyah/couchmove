@@ -1,7 +1,8 @@
 package com.github.couchmove;
 
-import com.couchbase.client.java.query.util.IndexInfo;
-import com.couchbase.client.java.view.DesignDocument;
+import com.couchbase.client.java.manager.query.QueryIndex;
+import com.couchbase.client.java.manager.view.DesignDocument;
+import com.couchbase.client.java.view.DesignDocumentNamespace;
 import com.github.couchmove.exception.CouchmoveException;
 import com.github.couchmove.pojo.ChangeLog;
 import com.github.couchmove.pojo.Status;
@@ -11,6 +12,7 @@ import com.github.couchmove.repository.CouchbaseRepository;
 import com.github.couchmove.repository.CouchbaseRepositoryImpl;
 import com.github.couchmove.service.ChangeLogDBService;
 import com.github.couchmove.utils.BaseIT;
+import lombok.var;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -44,9 +46,9 @@ public class CouchmoveIT extends BaseIT {
 
     @BeforeEach
     public void init() {
-        changeLogRepository = new CouchbaseRepositoryImpl<>(getBucket(), getCouchbaseContainer().getUsername(), getCouchbaseContainer().getPassword(), ChangeLog.class);
-        changeLogDBService = new ChangeLogDBService(getBucket(), getCouchbaseContainer().getUsername(), getCouchbaseContainer().getPassword());
-        userRepository = new CouchbaseRepositoryImpl<>(getBucket(), getCouchbaseContainer().getUsername(), getCouchbaseContainer().getPassword(), User.class);
+        changeLogRepository = new CouchbaseRepositoryImpl<>(getBucket(), getCluster(), ChangeLog.class);
+        changeLogDBService = new ChangeLogDBService(getBucket(), getCluster());
+        userRepository = new CouchbaseRepositoryImpl<>(getBucket(), getCluster(), User.class);
     }
 
     @Test
@@ -89,14 +91,14 @@ public class CouchmoveIT extends BaseIT {
         assertEquals(new User("user", "toto", "10/01/1991"), userRepository.findOne("user::toto"));
 
         // Index inserted
-        Optional<IndexInfo> userIndexInfo = getBucket().bucketManager().listN1qlIndexes().stream()
+        Optional<QueryIndex> userIndexInfo = getCluster().queryIndexes().getAllIndexes(getBucket().name()).stream()
                 .filter(i -> i.name().equals("user_index"))
                 .findFirst();
         assertTrue(userIndexInfo.isPresent());
         assertEquals("`username`", userIndexInfo.get().indexKey().get(0));
 
         // Design Document inserted
-        DesignDocument designDocument = getBucket().bucketManager().getDesignDocument("user");
+        DesignDocument designDocument = getBucket().viewIndexes().getDesignDocument("user", DesignDocumentNamespace.PRODUCTION);
         assertNotNull(designDocument);
 
         // FTS index inserted
@@ -207,6 +209,6 @@ public class CouchmoveIT extends BaseIT {
 
     @NotNull
     private Couchmove getCouchmove(String skip) {
-        return new Couchmove(getBucket(), getCouchbaseContainer().getUsername(), getCouchbaseContainer().getPassword(), DB_MIGRATION + skip);
+        return new Couchmove(getBucket(), getCluster(), DB_MIGRATION + skip);
     }
 }

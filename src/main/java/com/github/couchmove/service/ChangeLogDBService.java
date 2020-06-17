@@ -1,8 +1,8 @@
 package com.github.couchmove.service;
 
 import com.couchbase.client.java.Bucket;
-import com.couchbase.client.java.query.N1qlQuery;
-import com.couchbase.client.java.view.DesignDocument;
+import com.couchbase.client.java.Cluster;
+import com.couchbase.client.java.manager.view.DesignDocument;
 import com.github.couchmove.exception.CouchmoveException;
 import com.github.couchmove.pojo.ChangeLog;
 import com.github.couchmove.pojo.Status;
@@ -27,10 +27,14 @@ public class ChangeLogDBService {
 
     public static final String PREFIX_ID = "changelog::";
 
-    private CouchbaseRepository<ChangeLog> repository;
+    private final CouchbaseRepository<ChangeLog> repository;
 
-    public ChangeLogDBService(Bucket bucket, String username, String password) {
-        this.repository = new CouchbaseRepositoryImpl<>(bucket, username, password, ChangeLog.class);
+    public ChangeLogDBService(Bucket bucket, Cluster cluster) {
+        this.repository = new CouchbaseRepositoryImpl<>(bucket, cluster, ChangeLog.class);
+    }
+
+    ChangeLogDBService(CouchbaseRepository<ChangeLog> repository) {
+        this.repository = repository;
     }
 
     /**
@@ -108,9 +112,9 @@ public class ChangeLogDBService {
     }
 
     /**
-     * Queries Couchbase {@link Bucket} with multiple {@link N1qlQuery}
+     * Queries Couchbase {@link Bucket} with multiple N1ql queries
      *
-     * @param content containing multiple {@link N1qlQuery}
+     * @param content containing multiple N1ql queries
      */
     public void executeN1ql(String content) {
         List<String> requests = extractRequests(content);

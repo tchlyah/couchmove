@@ -35,7 +35,7 @@ public class ChangeLockServiceIT extends BaseIT {
 
     @NotNull
     private ChangeLockService newChangeLockService() {
-        return new ChangeLockService(getBucket(), getCouchbaseContainer().getUsername(), getCouchbaseContainer().getPassword());
+        return new ChangeLockService(getBucket(), getCluster());
     }
 
     @Test

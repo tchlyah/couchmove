@@ -1,9 +1,10 @@
 package com.github.couchmove.repository;
 
-import com.couchbase.client.java.error.CASMismatchException;
-import com.couchbase.client.java.error.DocumentAlreadyExistsException;
-import com.couchbase.client.java.query.util.IndexInfo;
-import com.couchbase.client.java.view.DesignDocument;
+import com.couchbase.client.core.error.CasMismatchException;
+import com.couchbase.client.core.error.DocumentExistsException;
+import com.couchbase.client.java.manager.query.QueryIndex;
+import com.couchbase.client.java.manager.view.DesignDocument;
+import com.couchbase.client.java.view.DesignDocumentNamespace;
 import com.github.couchmove.exception.CouchmoveException;
 import com.github.couchmove.pojo.ChangeLog;
 import com.github.couchmove.pojo.Type;
@@ -41,7 +42,7 @@ public class CouchbaseRepositoryIT extends BaseIT {
 
     @BeforeEach
     public void setUp() {
-        repository = new CouchbaseRepositoryImpl<>(getBucket(), getCouchbaseContainer().getUsername(), getCouchbaseContainer().getPassword(), ChangeLog.class);
+        repository = new CouchbaseRepositoryImpl<>(getBucket(), getCluster(), ChangeLog.class);
     }
 
     @Test
@@ -94,7 +95,7 @@ public class CouchbaseRepositoryIT extends BaseIT {
         changeLog.setCas(null);
 
         // Then we should have exception upon saving with cas operation
-        assertThrows(DocumentAlreadyExistsException.class, () -> repository.checkAndSave(id, changeLog));
+        assertThrows(DocumentExistsException.class, () -> repository.checkAndSave(id, changeLog));
     }
 
     @Test
@@ -112,7 +113,7 @@ public class CouchbaseRepositoryIT extends BaseIT {
         savedChangeLog.setCas(new Random().nextLong());
 
         // Then we should have exception upon saving
-        assertThrows(CASMismatchException.class, () -> repository.checkAndSave(id, savedChangeLog));
+        assertThrows(CasMismatchException.class, () -> repository.checkAndSave(id, savedChangeLog));
     }
 
     @Test
@@ -131,14 +132,14 @@ public class CouchbaseRepositoryIT extends BaseIT {
         repository.importDesignDoc(name, design_doc);
 
         // Then it should be saved
-        DesignDocument designDocument = getBucket().bucketManager().getDesignDocument(name);
+        DesignDocument designDocument = getBucket().viewIndexes().getDesignDocument(name, DesignDocumentNamespace.PRODUCTION);
         Assert.assertNotNull(designDocument);
     }
 
     @Test
     public void should_import_fts_index() throws IOException {
         // Given a fts index json definition file
-        String ftsIndex = IOUtils.toString(FileUtils.getPathFromResource(DB_MIGRATION + "success/V2__name.fts").toUri(), Charset.defaultCharset());
+        String ftsIndex = IOUtils.toString(FileUtils.getPathFromResource(DB_MIGRATION + "test.fts").toUri(), Charset.defaultCharset());
 
         // When we import it
         repository.importFtsIndex(TEST, ftsIndex);
@@ -168,11 +169,11 @@ public class CouchbaseRepositoryIT extends BaseIT {
         repository.query(request);
 
         // Then the index should be Created
-        List<IndexInfo> indexInfos = getBucket().bucketManager().listN1qlIndexes().stream()
+        List<QueryIndex> indexInfos = getCluster().queryIndexes().getAllIndexes(getBucket().name()).stream()
                 .filter(indexInfo -> indexInfo.name().equals(INDEX_NAME))
                 .collect(Collectors.toList());
         Assert.assertEquals(1, indexInfos.size());
-        IndexInfo indexInfo = indexInfos.get(0);
+        QueryIndex indexInfo = indexInfos.get(0);
         Assert.assertEquals(INDEX_NAME, indexInfo.name());
         Assert.assertEquals(format("`%s`", INDEX_NAME), indexInfo.indexKey().get(0));
     }

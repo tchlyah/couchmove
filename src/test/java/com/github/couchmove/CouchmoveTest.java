@@ -35,7 +35,7 @@ import static org.mockito.Mockito.*;
 public class CouchmoveTest {
 
     @InjectMocks
-    private Couchmove couchmove = new Couchmove(mockBucket(), null, null);
+    private final Couchmove couchmove = new Couchmove(mockBucket(), null);
 
     @Mock
     private ChangeLockService lockServiceMock;
@@ -49,7 +49,7 @@ public class CouchmoveTest {
     @Test
     public void should_migration_fail_if_lock_not_acquired() {
         when(lockServiceMock.acquireLock()).thenReturn(false);
-        assertThrows(CouchmoveException.class, () -> couchmove.migrate());
+        assertThrows(CouchmoveException.class, couchmove::migrate);
     }
 
     @Test
