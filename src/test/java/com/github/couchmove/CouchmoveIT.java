@@ -191,6 +191,46 @@ public class CouchmoveIT extends BaseIT {
         assertLike(changeLogRepository.findOne(PREFIX_ID + "1"), "1", 1, "create index", N1QL, "V1__create_index.n1ql", "69eb9007c910c2b9cac46044a54de5e933b768ae874c6408356372576ab88dbd", EXECUTED);
     }
 
+    @Test
+    public void should_build_multiple_index_not_fail() {
+        // Given a Couchmove instance configured for success migration folder
+        Couchmove couchmove = getCouchmove("multiple-deferred-indexes");
+
+        // When we launch migration
+        couchmove.migrate();
+
+        // Then all changeLogs should be inserted in DB
+        List<ChangeLog> changeLogs = Stream.of("0", "1")
+                .map(version -> PREFIX_ID + version)
+                .map(changeLogRepository::findOne)
+                .collect(Collectors.toList());
+
+        assertEquals(2, changeLogs.size());
+        assertLike(changeLogs.get(0),
+                "0", 1, "create deferred index", N1QL, "V0__create_deferred_index.n1ql",
+                "060f486279932b3838a90f23032a135ad20f8a364fbbda9305f6e20a5b065085",
+                EXECUTED);
+        assertLike(changeLogs.get(1),
+                "1", 2, "create second deferred index", N1QL, "V1__create_second_deferred_index.n1ql",
+                "49fed597ee5f7012b6ab7eb66825e20de4906ecfb10ee9b5ae8f74dfe242b74a",
+                EXECUTED);
+
+        // And successfully executed
+
+        // Index inserted
+        Optional<QueryIndex> userIndexInfo = getCluster().queryIndexes().getAllIndexes(getBucket().name()).stream()
+                .filter(i -> i.name().equals("buyer_index"))
+                .findFirst();
+        assertTrue(userIndexInfo.isPresent());
+        assertEquals("`username`", userIndexInfo.get().indexKey().get(0));
+
+        userIndexInfo = getCluster().queryIndexes().getAllIndexes(getBucket().name()).stream()
+                .filter(i -> i.name().equals("merchant_index"))
+                .findFirst();
+        assertTrue(userIndexInfo.isPresent());
+        assertEquals("`username`", userIndexInfo.get().indexKey().get(0));
+    }
+
     private static void assertLike(ChangeLog changeLog, String version, Integer order, String description, Type type, String script, String checksum, Status status) {
         assertNotNull("ChangeLog", changeLog);
         assertEquals("version", version, changeLog.getVersion());

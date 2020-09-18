@@ -5,9 +5,8 @@ import com.couchbase.client.core.deps.com.fasterxml.jackson.core.type.TypeRefere
 import com.couchbase.client.core.deps.com.fasterxml.jackson.databind.JsonNode;
 import com.couchbase.client.core.deps.com.fasterxml.jackson.databind.ObjectMapper;
 import com.couchbase.client.core.deps.com.fasterxml.jackson.databind.node.ObjectNode;
-import com.couchbase.client.core.error.CouchbaseException;
-import com.couchbase.client.core.error.DocumentNotFoundException;
-import com.couchbase.client.core.error.IndexNotFoundException;
+import com.couchbase.client.core.error.*;
+import com.couchbase.client.core.error.context.QueryErrorContext;
 import com.couchbase.client.core.json.Mapper;
 import com.couchbase.client.core.retry.BestEffortRetryStrategy;
 import com.couchbase.client.java.Bucket;
@@ -35,6 +34,7 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static com.couchbase.client.java.kv.InsertOptions.insertOptions;
 import static com.couchbase.client.java.kv.ReplaceOptions.replaceOptions;
@@ -147,7 +147,24 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
         try {
             cluster.query(parametrizedStatement, withRetry(QueryOptions.queryOptions().scanConsistency(QueryScanConsistency.REQUEST_PLUS)));
         } catch (Exception e) {
-            throw new CouchmoveException("Unable to execute n1ql request", e);
+            //noinspection SimplifyStreamApiCallChains
+            boolean ignore = Stream.of(e)
+                    .filter(InternalServerFailureException.class::isInstance)
+                    .map(InternalServerFailureException.class::cast)
+                    .map(CouchbaseException::context)
+                    .filter(QueryErrorContext.class::isInstance)
+                    .map(QueryErrorContext.class::cast)
+                    .map(QueryErrorContext::errors)
+                    .flatMap(java.util.Collection::stream)
+                    .map(ErrorCodeAndMessage::message)
+                    .filter(m -> m.contains("Build Already In Progress"))
+                    .findAny()
+                    .isPresent();
+            if (ignore) {
+                logger.warn("Ignoring error while executing N1QL request", e);
+            } else {
+                throw new CouchmoveException("Unable to execute n1ql request", e);
+            }
         }
     }
 
