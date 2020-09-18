@@ -34,6 +34,7 @@ import rx.Observable;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
@@ -149,7 +150,20 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
                     .query(N1qlQuery.simple(parametrizedStatement,
                             N1qlParams.build().consistency(STATEMENT_PLUS))));
             if (!result.parseSuccess()) {
-                logger.error("Invalid N1QL request '{}' : {}", parametrizedStatement, single(result.errors()));
+                List<JsonObject> errors = result.errors().toList().toBlocking().first();
+                //noinspection SimplifyStreamApiCallChains
+                boolean ignore = errors.stream()
+                        .map(jsonObject -> jsonObject.get("msg"))
+                        .filter(String.class::isInstance)
+                        .map(String.class::cast)
+                        .filter(m -> m.contains("Build Already In Progress"))
+                        .findAny()
+                        .isPresent();
+                if (ignore) {
+                    logger.warn("Ignoring error while executing N1QL request: {}", errors);
+                    return;
+                }
+                logger.error("Invalid N1QL request '{}' : {}", parametrizedStatement, errors);
                 throw new CouchmoveException("Invalid n1ql request");
             }
             if (!single(result.finalSuccess())) {

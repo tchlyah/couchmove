@@ -1,0 +1,6 @@
+-- create Index
+CREATE INDEX buyer_index ON `${bucket}`(username)
+  WHERE type = 'buyer'
+  WITH { "defer_build" : true };
+
+BUILD INDEX ON `${bucket}`(buyer_index);
