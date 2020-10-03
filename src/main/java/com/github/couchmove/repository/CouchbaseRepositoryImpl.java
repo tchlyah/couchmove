@@ -19,6 +19,7 @@ import com.couchbase.client.java.error.TemporaryFailureException;
 import com.couchbase.client.java.query.AsyncN1qlQueryResult;
 import com.couchbase.client.java.query.N1qlParams;
 import com.couchbase.client.java.query.N1qlQuery;
+import com.couchbase.client.java.query.util.IndexInfo;
 import com.couchbase.client.java.util.retry.RetryBuilder;
 import com.couchbase.client.java.util.retry.RetryWhenFunction;
 import com.couchbase.client.java.view.DesignDocument;
@@ -37,6 +38,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static com.couchbase.client.java.query.consistency.ScanConsistency.STATEMENT_PLUS;
 import static com.google.common.collect.ImmutableMap.of;
@@ -150,20 +152,7 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
                     .query(N1qlQuery.simple(parametrizedStatement,
                             N1qlParams.build().consistency(STATEMENT_PLUS))));
             if (!result.parseSuccess()) {
-                List<JsonObject> errors = result.errors().toList().toBlocking().first();
-                //noinspection SimplifyStreamApiCallChains
-                boolean ignore = errors.stream()
-                        .map(jsonObject -> jsonObject.get("msg"))
-                        .filter(String.class::isInstance)
-                        .map(String.class::cast)
-                        .filter(m -> m.contains("Build Already In Progress"))
-                        .findAny()
-                        .isPresent();
-                if (ignore) {
-                    logger.warn("Ignoring error while executing N1QL request: {}", errors);
-                    return;
-                }
-                logger.error("Invalid N1QL request '{}' : {}", parametrizedStatement, errors);
+                logger.error("Invalid N1QL request '{}' : {}", parametrizedStatement, single(result.errors()));
                 throw new CouchmoveException("Invalid n1ql request");
             }
             if (!single(result.finalSuccess())) {
