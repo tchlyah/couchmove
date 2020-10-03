@@ -4,6 +4,8 @@ import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.manager.view.DesignDocument;
 import com.github.couchmove.pojo.CouchbaseEntity;
 
+import java.time.Duration;
+
 /**
  * A repository for encapsulating storage, retrieval, and removal of json documents to Couchbase {@link Bucket}
  *
@@ -97,4 +99,17 @@ public interface CouchbaseRepository<E extends CouchbaseEntity> {
      * @return name of the repository Couchbase {@link Bucket}
      */
     String getBucketName();
+
+    /**
+     * Instruct the query engine to trigger the build of indexes that have been deferred, within the default management
+     */
+    void buildN1qlDeferredIndexes();
+
+    /**
+     * Watches all indexes, polling the query service until they become
+     * "online" or the timeout has expired
+     *
+     * @param duration the maximum duration for which to poll for the index to become online.
+     */
+    void watchN1qlIndexes(Duration duration);
 }

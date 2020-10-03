@@ -18,6 +18,7 @@ import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
@@ -194,6 +195,21 @@ public class Couchmove {
             changeLog.setDuration(sw.elapsed(TimeUnit.MILLISECONDS));
             dbService.save(changeLog);
         }
+    }
+
+    /**
+     * Instruct the query engine to trigger the build of indexes that have been deferred, within the default management
+     */
+    public void buildN1qlDeferredIndexes() {
+        dbService.buildN1qlDeferredIndexes();
+    }
+
+    /**
+     * Watches all indexes, polling the query service until they become
+     * "online" or the timeout has expired
+     */
+    public void waitForN1qlIndexes(Duration duration) {
+        dbService.waitForN1qlIndexes(duration);
     }
 
     /**

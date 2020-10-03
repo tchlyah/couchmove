@@ -19,6 +19,7 @@ import com.couchbase.client.java.kv.GetOptions;
 import com.couchbase.client.java.kv.GetResult;
 import com.couchbase.client.java.kv.MutationResult;
 import com.couchbase.client.java.kv.UpsertOptions;
+import com.couchbase.client.java.manager.query.QueryIndex;
 import com.couchbase.client.java.manager.search.SearchIndex;
 import com.couchbase.client.java.manager.view.DesignDocument;
 import com.couchbase.client.java.manager.view.View;
@@ -34,7 +35,10 @@ import org.apache.commons.lang.text.StrSubstitutor;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
+import java.time.Duration;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static com.couchbase.client.java.kv.InsertOptions.insertOptions;
 import static com.couchbase.client.java.kv.ReplaceOptions.replaceOptions;
@@ -180,6 +184,19 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
     @Override
     public String getBucketName() {
         return getCollection().bucketName();
+    }
+
+    @Override
+    public void buildN1qlDeferredIndexes() {
+        cluster.queryIndexes().buildDeferredIndexes(getBucketName());
+    }
+
+    @Override
+    public void watchN1qlIndexes(Duration duration) {
+        List<String> indexes = cluster.queryIndexes().getAllIndexes(getBucketName()).stream()
+                .map(QueryIndex::name)
+                .collect(Collectors.toList());
+        cluster.queryIndexes().watchIndexes(getBucketName(), indexes, duration);
     }
 
     private static <SELF extends CommonOptions<SELF>> SELF withRetry(SELF options) {

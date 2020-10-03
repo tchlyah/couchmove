@@ -12,6 +12,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -142,6 +143,23 @@ public class ChangeLogDBService {
     public void importFtsIndex(String name, String content) {
         logger.info("Inserting FTS Index '{}'...", name);
         repository.importFtsIndex(name, content);
+    }
+
+    /**
+     * Watches all indexes, polling the query service until they become
+     * "online" or the timeout has expired
+     *
+     * @param duration the maximum duration for which to poll for the index to become online.
+     */
+    public void waitForN1qlIndexes(Duration duration) {
+        repository.watchN1qlIndexes(duration);
+    }
+
+    /**
+     * Instruct the query engine to trigger the build of indexes that have been deferred, within the default management
+     */
+    public void buildN1qlDeferredIndexes() {
+        repository.buildN1qlDeferredIndexes();
     }
 
     /**
