@@ -199,6 +199,19 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
         return bucket.name();
     }
 
+    @Override
+    public void buildN1qlDeferredIndexes() {
+        bucket.bucketManager().buildN1qlDeferredIndexes();
+    }
+
+    @Override
+    public void watchN1qlIndexes(long timeout, TimeUnit timeunit) {
+        List<String> indexes = bucket.bucketManager().listN1qlIndexes().stream()
+                .map(IndexInfo::name)
+                .collect(Collectors.toList());
+        bucket.bucketManager().watchN1qlIndexes(indexes, timeout, timeunit);
+    }
+
     //<editor-fold desc="Helpers">
     @Nullable
     private <T> T single(Observable<T> observable) {

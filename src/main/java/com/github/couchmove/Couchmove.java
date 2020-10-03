@@ -200,6 +200,21 @@ public class Couchmove {
     }
 
     /**
+     * Instruct the query engine to trigger the build of indexes that have been deferred, within the default management
+     */
+    public void buildN1qlDeferredIndexes() {
+        dbService.buildN1qlDeferredIndexes();
+    }
+
+    /**
+     * Watches all indexes, polling the query service until they become
+     * "online" or the timeout has expired
+     */
+    public void waitForN1qlIndexes(long timeout, TimeUnit timeunit) {
+        dbService.waitForN1qlIndexes(timeout, timeunit);
+    }
+
+    /**
      * Applies the {@link ChangeLog} according to it's {@link ChangeLog#type} :
      * <ul>
      *     <li> {@link Type#DOCUMENTS} : Imports all {@value Constants#JSON} documents contained in the folder

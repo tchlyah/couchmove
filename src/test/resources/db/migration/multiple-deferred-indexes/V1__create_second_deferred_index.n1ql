@@ -2,5 +2,3 @@
 CREATE INDEX merchant_index ON `${bucket}`(username)
   WHERE type = 'merchant'
   WITH { "defer_build" : true };
-
-BUILD INDEX ON `${bucket}`(merchant_index);

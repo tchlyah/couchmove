@@ -5,6 +5,8 @@ import com.couchbase.client.java.query.N1qlQuery;
 import com.couchbase.client.java.view.DesignDocument;
 import com.github.couchmove.pojo.CouchbaseEntity;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * A repository for encapsulating storage, retrieval, and removal of json documents to Couchbase {@link Bucket}
  *
@@ -98,4 +100,18 @@ public interface CouchbaseRepository<E extends CouchbaseEntity> {
      * @return name of the repository Couchbase {@link Bucket}
      */
     String getBucketName();
+
+    /**
+     * Instruct the query engine to trigger the build of indexes that have been deferred, within the default management
+     */
+    void buildN1qlDeferredIndexes();
+
+    /**
+     * Watches all indexes, polling the query service until they become
+     * "online" or the timeout has expired
+     *
+     * @param timeout  the maximum duration for which to poll for the index to become online.
+     * @param timeunit the time unit for the timeout.
+     */
+    void watchN1qlIndexes(long timeout, TimeUnit timeunit);
 }

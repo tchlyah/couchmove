@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -190,7 +191,7 @@ public class CouchmoveIT extends BaseIT {
     }
 
     @Test
-    public void should_build_multiple_index_not_fail() {
+    public void should_build_deferred_indexes() {
         // Given a Couchmove instance configured for success migration folder
         Couchmove couchmove = getCouchmove("multiple-deferred-indexes");
 
@@ -206,14 +207,18 @@ public class CouchmoveIT extends BaseIT {
         assertEquals(2, changeLogs.size());
         assertLike(changeLogs.get(0),
                 "0", 1, "create deferred index", N1QL, "V0__create_deferred_index.n1ql",
-                "060f486279932b3838a90f23032a135ad20f8a364fbbda9305f6e20a5b065085",
+                "8987fdc8782fe4f8321cfae8f388d9005ac6c2eca726105a2739170cc4870a66",
                 EXECUTED);
         assertLike(changeLogs.get(1),
                 "1", 2, "create second deferred index", N1QL, "V1__create_second_deferred_index.n1ql",
-                "49fed597ee5f7012b6ab7eb66825e20de4906ecfb10ee9b5ae8f74dfe242b74a",
+                "77492051f8633e40032881e474207d97d87c3eb1e239a832b1ad11b22c933fe6",
                 EXECUTED);
 
-        // And successfully executed
+        // Trigger deferred index build
+        couchmove.buildN1qlDeferredIndexes();
+
+        // Wait for indexes to be built
+        couchmove.waitForN1qlIndexes(5, TimeUnit.SECONDS);
 
         // Index inserted
         Optional<IndexInfo> userIndexInfo = getBucket().bucketManager().listN1qlIndexes().stream()
