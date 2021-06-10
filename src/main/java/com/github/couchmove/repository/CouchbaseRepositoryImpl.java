@@ -160,7 +160,7 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
         jsonContent = injectParameters(jsonContent);
         logger.trace("Import FTS index : \n'{}'", jsonContent);
         try {
-            SearchIndex searchIndex = getJsonMapper().readValue(jsonContent, SearchIndex.class);
+            CustomSearchIndex searchIndex = getJsonMapper().readValue(jsonContent, CustomSearchIndex.class);
             cluster.searchIndexes().upsertIndex(searchIndex, withRetry(upsertSearchIndexOptions()));
         } catch (CouchbaseException | JsonProcessingException e) {
             throw new CouchmoveException("Could not store FTS index '" + name + "'", e);
