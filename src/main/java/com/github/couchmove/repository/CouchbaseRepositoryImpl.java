@@ -177,6 +177,15 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
         }
     }
 
+    @Override
+    public Map<String, Object> getFtsIndexParams(String name) {
+        try {
+            return cluster.searchIndexes().getIndex(name).params();
+        } catch (IndexNotFoundException e) {
+            return null;
+        }
+    }
+
     String injectParameters(String statement) {
         return StrSubstitutor.replace(statement, of(BUCKET_PARAM, getBucketName()));
     }

@@ -5,6 +5,7 @@ import com.couchbase.client.java.manager.view.DesignDocument;
 import com.github.couchmove.pojo.CouchbaseEntity;
 
 import java.time.Duration;
+import java.util.Map;
 
 /**
  * A repository for encapsulating storage, retrieval, and removal of json documents to Couchbase {@link Bucket}
@@ -94,6 +95,13 @@ public interface CouchbaseRepository<E extends CouchbaseEntity> {
      * @param name name of the FTS index to verify
      */
     boolean isFtsIndexExists(String name);
+
+    /**
+     * Get params of a Full Text Search Index
+     *
+     * @param name name of the FTS index of which to get the params
+     */
+    Map<String, Object> getFtsIndexParams(String name);
 
     /**
      * @return name of the repository Couchbase {@link Bucket}
