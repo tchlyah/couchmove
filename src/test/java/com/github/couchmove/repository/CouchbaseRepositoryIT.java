@@ -15,10 +15,12 @@ import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.testcontainers.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
 
@@ -146,6 +148,13 @@ public class CouchbaseRepositoryIT extends BaseIT {
 
         // Then it should be created
         assertThat(repository.isFtsIndexExists(TEST)).isTrue();
+
+        // Define expected params
+        String params = "{\"doc_config\":{\"docid_prefix_delim\":\"\",\"docid_regexp\":\"\",\"mode\":\"type_field\",\"type_field\":\"_class\"},\"mapping\":{\"analysis\":{},\"default_analyzer\":\"standard\",\"default_datetime_parser\":\"dateTimeOptional\",\"default_field\":\"_all\",\"default_mapping\":{\"dynamic\":true,\"enabled\":false},\"default_type\":\"_default\",\"docvalues_dynamic\":true,\"index_dynamic\":true,\"store_dynamic\":false,\"type_field\":\"_type\",\"types\":{\"testType\":{\"dynamic\":true,\"enabled\":true}}},\"store\":{\"indexType\":\"scorch\",\"segmentVersion\":15}}";
+        Map<String, Object> expectedParams = new ObjectMapper().readValue(params, Map.class);
+
+        // Ensure params is created as specified
+        assertThat(repository.getFtsIndexParams(TEST)).isEqualTo(expectedParams);
     }
 
     @Test
