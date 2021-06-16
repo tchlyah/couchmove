@@ -38,6 +38,7 @@ import org.slf4j.Logger;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static com.couchbase.client.java.kv.InsertOptions.insertOptions;
@@ -160,21 +161,24 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
         jsonContent = injectParameters(jsonContent);
         logger.trace("Import FTS index : \n'{}'", jsonContent);
         try {
-            SearchIndex searchIndex = getJsonMapper().readValue(jsonContent, SearchIndex.class);
+            CustomSearchIndex searchIndex = getJsonMapper().readValue(jsonContent, CustomSearchIndex.class);
             cluster.searchIndexes().upsertIndex(searchIndex, withRetry(upsertSearchIndexOptions()));
         } catch (CouchbaseException | JsonProcessingException e) {
             throw new CouchmoveException("Could not store FTS index '" + name + "'", e);
         }
     }
 
+    public Optional<SearchIndex> getFtsIndex(String name) {
+        try {
+            return Optional.of(cluster.searchIndexes().getIndex(name));
+        } catch (IndexNotFoundException e) {
+            return Optional.empty();
+        }
+    }
+
     @Override
     public boolean isFtsIndexExists(String name) {
-        try {
-            cluster.searchIndexes().getIndex(name);
-            return true;
-        } catch (IndexNotFoundException e) {
-            return false;
-        }
+        return getFtsIndex(name).isPresent();
     }
 
     String injectParameters(String statement) {

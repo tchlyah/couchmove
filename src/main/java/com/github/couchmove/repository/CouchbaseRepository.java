@@ -5,6 +5,7 @@ import com.couchbase.client.java.manager.view.DesignDocument;
 import com.github.couchmove.pojo.CouchbaseEntity;
 
 import java.time.Duration;
+import java.util.Map;
 
 /**
  * A repository for encapsulating storage, retrieval, and removal of json documents to Couchbase {@link Bucket}

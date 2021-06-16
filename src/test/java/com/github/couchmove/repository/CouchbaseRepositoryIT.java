@@ -3,6 +3,7 @@ package com.github.couchmove.repository;
 import com.couchbase.client.core.error.CasMismatchException;
 import com.couchbase.client.core.error.DocumentExistsException;
 import com.couchbase.client.java.manager.query.QueryIndex;
+import com.couchbase.client.java.manager.search.SearchIndex;
 import com.couchbase.client.java.manager.view.DesignDocument;
 import com.couchbase.client.java.view.DesignDocumentNamespace;
 import com.github.couchmove.exception.CouchmoveException;
@@ -15,10 +16,12 @@ import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.testcontainers.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
 
@@ -146,6 +149,13 @@ public class CouchbaseRepositoryIT extends BaseIT {
 
         // Then it should be created
         assertThat(repository.isFtsIndexExists(TEST)).isTrue();
+
+        // Get fts file contents
+        Map<String, Object> ftsIndexMap = (Map<String, Object>) CouchbaseRepositoryImpl.getJsonMapper().readValue(ftsIndex, Map.class);
+
+        // Ensure params is created as specified
+        SearchIndex searchIndex = ((CouchbaseRepositoryImpl<?>) repository).getFtsIndex(TEST).get();
+        assertThat(searchIndex.params()).isEqualTo(ftsIndexMap.get("params"));
     }
 
     @Test
