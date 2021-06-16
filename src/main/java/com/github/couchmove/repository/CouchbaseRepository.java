@@ -97,13 +97,6 @@ public interface CouchbaseRepository<E extends CouchbaseEntity> {
     boolean isFtsIndexExists(String name);
 
     /**
-     * Get params of a Full Text Search Index
-     *
-     * @param name name of the FTS index of which to get the params
-     */
-    Map<String, Object> getFtsIndexParams(String name);
-
-    /**
      * @return name of the repository Couchbase {@link Bucket}
      */
     String getBucketName();

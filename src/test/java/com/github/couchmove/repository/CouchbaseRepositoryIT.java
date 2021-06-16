@@ -3,6 +3,7 @@ package com.github.couchmove.repository;
 import com.couchbase.client.core.error.CasMismatchException;
 import com.couchbase.client.core.error.DocumentExistsException;
 import com.couchbase.client.java.manager.query.QueryIndex;
+import com.couchbase.client.java.manager.search.SearchIndex;
 import com.couchbase.client.java.manager.view.DesignDocument;
 import com.couchbase.client.java.view.DesignDocumentNamespace;
 import com.github.couchmove.exception.CouchmoveException;
@@ -149,12 +150,12 @@ public class CouchbaseRepositoryIT extends BaseIT {
         // Then it should be created
         assertThat(repository.isFtsIndexExists(TEST)).isTrue();
 
-        // Define expected params
-        String params = "{\"doc_config\":{\"docid_prefix_delim\":\"\",\"docid_regexp\":\"\",\"mode\":\"type_field\",\"type_field\":\"_class\"},\"mapping\":{\"analysis\":{},\"default_analyzer\":\"standard\",\"default_datetime_parser\":\"dateTimeOptional\",\"default_field\":\"_all\",\"default_mapping\":{\"dynamic\":true,\"enabled\":false},\"default_type\":\"_default\",\"docvalues_dynamic\":true,\"index_dynamic\":true,\"store_dynamic\":false,\"type_field\":\"_type\",\"types\":{\"testType\":{\"dynamic\":true,\"enabled\":true}}},\"store\":{\"indexType\":\"scorch\",\"segmentVersion\":15}}";
-        Map<String, Object> expectedParams = new ObjectMapper().readValue(params, Map.class);
+        // Get fts file contents
+        Map<String, Object> ftsIndexMap = (Map<String, Object>) CouchbaseRepositoryImpl.getJsonMapper().readValue(ftsIndex, Map.class);
 
         // Ensure params is created as specified
-        assertThat(repository.getFtsIndexParams(TEST)).isEqualTo(expectedParams);
+        SearchIndex searchIndex = ((CouchbaseRepositoryImpl<?>) repository).getFtsIndex(TEST).get();
+        assertThat(searchIndex.params()).isEqualTo(ftsIndexMap.get("params"));
     }
 
     @Test

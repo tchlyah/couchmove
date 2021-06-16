@@ -38,6 +38,7 @@ import org.slf4j.Logger;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static com.couchbase.client.java.kv.InsertOptions.insertOptions;
@@ -167,23 +168,17 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
         }
     }
 
-    @Override
-    public boolean isFtsIndexExists(String name) {
+    public Optional<SearchIndex> getFtsIndex(String name) {
         try {
-            cluster.searchIndexes().getIndex(name);
-            return true;
+            return Optional.of(cluster.searchIndexes().getIndex(name));
         } catch (IndexNotFoundException e) {
-            return false;
+            return Optional.empty();
         }
     }
 
     @Override
-    public Map<String, Object> getFtsIndexParams(String name) {
-        try {
-            return cluster.searchIndexes().getIndex(name).params();
-        } catch (IndexNotFoundException e) {
-            return null;
-        }
+    public boolean isFtsIndexExists(String name) {
+        return getFtsIndex(name).isPresent();
     }
 
     String injectParameters(String statement) {
