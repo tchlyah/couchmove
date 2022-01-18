@@ -1,6 +1,8 @@
 package com.github.couchmove.utils;
 
+import com.github.couchmove.pojo.Document;
 import com.google.common.io.Files;
+import lombok.var;
 import org.junit.Assert;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -10,12 +12,12 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.Map;
 import java.util.stream.Stream;
 
 import static com.github.couchmove.pojo.Type.DESIGN_DOC;
 import static com.github.couchmove.pojo.Type.N1QL;
 import static com.github.couchmove.utils.TestUtils.getRandomString;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
@@ -87,11 +89,13 @@ public class FileUtilsTest {
         Files.write(getRandomString().getBytes(), File.createTempFile(getRandomString(), ".txt", tempDir));
 
         // When we read files in this directory with extension filter
-        Map<String, String> result = FileUtils.readFilesInDirectory(tempDir.toPath(), "json", "n1ql");
+        var results = FileUtils.readFilesInDirectory(tempDir.toPath(), "json", "n1ql");
 
         // Then we should have file content matching this extension
-        Assert.assertEquals(2, result.size());
-        Assert.assertEquals(content1, result.get(file1.getName()));
-        Assert.assertEquals(content2, result.get(file2.getName()));
+        assertThat(results).hasSize(2);
+        assertThat(results).containsExactlyInAnyOrder(
+                new Document(null, null, file1.getName(), content1),
+                new Document(null, null, file2.getName(), content2)
+        );
     }
 }

@@ -1,8 +1,7 @@
 package com.github.couchmove.service;
 
 import com.github.couchmove.exception.CouchmoveException;
-import com.github.couchmove.pojo.ChangeLog;
-import com.github.couchmove.pojo.Type;
+import com.github.couchmove.pojo.*;
 import com.github.couchmove.utils.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
@@ -89,7 +88,7 @@ public class ChangeLogFileService {
      * @return {@link Map} which keys represents the name (with extension), and values the content of read files
      * @throws IOException if an I/O error occurs reading the files
      */
-    public Map<String, String> readDocuments(String path) throws IOException {
+    public Collection<Document> readDocuments(String path) throws IOException {
         return FileUtils.readFilesInDirectory(resolve(path), JSON);
     }
 

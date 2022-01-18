@@ -4,8 +4,7 @@ import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.Cluster;
 import com.couchbase.client.java.manager.view.DesignDocument;
 import com.github.couchmove.exception.CouchmoveException;
-import com.github.couchmove.pojo.ChangeLog;
-import com.github.couchmove.pojo.Status;
+import com.github.couchmove.pojo.*;
 import com.github.couchmove.repository.CouchbaseRepository;
 import com.github.couchmove.repository.CouchbaseRepositoryImpl;
 import org.apache.commons.io.FilenameUtils;
@@ -128,10 +127,10 @@ public class ChangeLogDBService {
      *
      * @param documents a {@link Map} which keys represent a json document to be inserted, and the values the unique ID of the document
      */
-    public void importDocuments(Map<String, String> documents) {
+    public void importDocuments(Collection<Document> documents) {
         logger.info("Importing {} documents", documents.size());
-        documents.forEach((fileName, content) ->
-                repository.save(FilenameUtils.getBaseName(fileName), content));
+        documents.forEach(document ->
+                repository.save(FilenameUtils.getBaseName(document.getFileName()), document.getContent()));
     }
 
     /**
