@@ -7,6 +7,7 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.*;
 import java.net.*;
@@ -106,8 +107,27 @@ public class FileUtils {
             throw new IllegalArgumentException("'" + directoryPath + "' is not a directory");
         }
         return directoryStream(directoryPath, extensions)
-                .map(path -> new Document(null, null, path.getFileName().toString(), readContent(path)))
+                .map(path -> getDocument(directoryPath, path))
+                .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
+    }
+
+    @Nullable
+    private static Document getDocument(Path directoryPath, Path path) {
+        String fileName = path.getFileName().toString();
+        String content = readContent(path);
+        Path relativePath = directoryPath.relativize(path);
+        switch (relativePath.getNameCount()) {
+            case 1:
+                return new Document(null, null, fileName, content);
+            case 3:
+                return new Document(
+                        relativePath.getName(0).toString(),
+                        relativePath.getName(1).toString(),
+                        fileName, content);
+            default:
+                return null;
+        }
     }
 
     @NotNull
@@ -126,11 +146,12 @@ public class FileUtils {
     private static Stream<Path> directoryStream(@NotNull Path directoryPath, String... extensions) {
         try {
             return StreamSupport.stream(Files.newDirectoryStream(directoryPath).spliterator(), false)
+                    .flatMap(path -> Files.isDirectory(path) ? directoryStream(path, extensions) : Stream.of(path))
                     .filter(Files::isRegularFile)
                     .filter(path -> Arrays.stream(extensions)
                             .anyMatch(extension -> FilenameUtils
-                                    .getExtension(path.getFileName().toString()).toLowerCase()
-                                    .equals(extension.toLowerCase())));
+                                    .getExtension(path.getFileName().toString())
+                                    .equalsIgnoreCase(extension)));
         } catch (IOException e) {
             throw new CouchmoveException("Unable to read directory '" + directoryPath + "'", e);
         }

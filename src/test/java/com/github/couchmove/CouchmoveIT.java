@@ -12,7 +12,6 @@ import com.github.couchmove.repository.CouchbaseRepository;
 import com.github.couchmove.repository.CouchbaseRepositoryImpl;
 import com.github.couchmove.service.ChangeLogDBService;
 import com.github.couchmove.utils.BaseIT;
-import lombok.var;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,7 +20,6 @@ import java.time.Duration;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -48,9 +46,9 @@ public class CouchmoveIT extends BaseIT {
 
     @BeforeEach
     public void init() {
-        changeLogRepository = new CouchbaseRepositoryImpl<>(getBucket(), getCluster(), ChangeLog.class);
+        changeLogRepository = new CouchbaseRepositoryImpl<>(getCluster(), getBucket(), ChangeLog.class);
         changeLogDBService = new ChangeLogDBService(getBucket(), getCluster());
-        userRepository = new CouchbaseRepositoryImpl<>(getBucket(), getCluster(), User.class);
+        userRepository = new CouchbaseRepositoryImpl<>(getCluster(), getBucket(), User.class);
     }
 
     @Test
@@ -237,6 +235,27 @@ public class CouchmoveIT extends BaseIT {
         assertEquals("`username`", userIndexInfo.get().indexKey().get(0));
     }
 
+    @Test
+    public void should_insert_collections() {
+        // Given a Couchmove instance configured for collections migration folder
+        Couchmove couchmove = getCouchmove("collections");
+
+        // When we launch migration
+        couchmove.migrate();
+
+        // Then all changeLogs should be inserted in DB
+        List<ChangeLog> changeLogs = Stream.of("0.1")
+                .map(version -> PREFIX_ID + version)
+                .map(changeLogRepository::findOne)
+                .collect(Collectors.toList());
+
+        assertEquals(1, changeLogs.size());
+        assertLike(changeLogs.get(0),
+                "0.1", 1, "insert users", DOCUMENTS, "V0.1__insert_users",
+                "873831eed9a55a6e7d4445d39cbd2229c1bd41361d5ef9ab300bf56ad4f57940",
+                EXECUTED);
+    }
+
     private static void assertLike(ChangeLog changeLog, String version, Integer order, String description, Type type, String script, String checksum, Status status) {
         assertNotNull("ChangeLog", changeLog);
         assertEquals("version", version, changeLog.getVersion());
@@ -254,7 +273,7 @@ public class CouchmoveIT extends BaseIT {
     }
 
     @NotNull
-    private Couchmove getCouchmove(String skip) {
-        return new Couchmove(getBucket(), getCluster(), DB_MIGRATION + skip);
+    private Couchmove getCouchmove(String path) {
+        return new Couchmove(getBucket(), getCluster(), DB_MIGRATION + path);
     }
 }
