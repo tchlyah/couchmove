@@ -16,7 +16,7 @@ public abstract class BaseIT {
     private static final String TEST_BUCKET = "test";
 
     @Getter(lazy = true)
-    private static final CouchbaseContainer couchbaseContainer = initCouchbaseContainer("couchbase/server:6.6.2");
+    private static final CouchbaseContainer couchbaseContainer = initCouchbaseContainer("couchbase/server:7.0.3");
 
     @Getter(lazy = true)
     private static final Cluster cluster = initCluster();
