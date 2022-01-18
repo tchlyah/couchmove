@@ -3,28 +3,23 @@ package com.github.couchmove;
 import com.couchbase.client.java.Bucket;
 import com.github.couchmove.exception.CouchmoveException;
 import com.github.couchmove.pojo.ChangeLog;
-import com.github.couchmove.service.ChangeLockService;
-import com.github.couchmove.service.ChangeLogDBService;
-import com.github.couchmove.service.ChangeLogFileService;
+import com.github.couchmove.service.*;
 import org.junit.Assert;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.runners.MockitoJUnitRunner;
 
 import java.io.IOException;
 
 import static com.github.couchmove.pojo.Status.*;
 import static com.github.couchmove.pojo.Type.*;
-import static com.github.couchmove.utils.TestUtils.*;
+import static com.github.couchmove.utils.TestUtils.RANDOM;
+import static com.github.couchmove.utils.TestUtils.getRandomChangeLog;
 import static com.google.common.collect.Lists.newArrayList;
 import static java.util.Collections.emptyList;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 
 /**
