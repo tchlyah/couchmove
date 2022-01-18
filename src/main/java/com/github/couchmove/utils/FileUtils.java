@@ -1,27 +1,20 @@
 package com.github.couchmove.utils;
 
 import com.github.couchmove.exception.CouchmoveException;
+import com.github.couchmove.pojo.Document;
+import lombok.SneakyThrows;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
+import java.io.*;
+import java.net.*;
+import java.nio.file.FileSystem;
 import java.nio.file.*;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
+import java.util.*;
+import java.util.stream.*;
 
-import static com.github.couchmove.utils.FunctionUtils.unchecked;
 import static org.apache.commons.io.IOUtils.toByteArray;
 
 /**
@@ -105,7 +98,7 @@ public class FileUtils {
      * @param extensions    The extensions of the files to read
      * @return {@link Map} which keys represents the name (with extension), and values the content of read files
      */
-    public static Map<String, String> readFilesInDirectory(Path directoryPath, String... extensions) {
+    public static Collection<Document> readFilesInDirectory(Path directoryPath, String... extensions) {
         if (directoryPath == null || !Files.exists(directoryPath)) {
             throw new IllegalArgumentException("File is null or doesn't exists");
         }
@@ -113,8 +106,14 @@ public class FileUtils {
             throw new IllegalArgumentException("'" + directoryPath + "' is not a directory");
         }
         return directoryStream(directoryPath, extensions)
-                .collect(Collectors.toMap(path -> path.getFileName().toString(),
-                        unchecked(path -> new String(IOUtils.toByteArray(path.toUri())))));
+                .map(path -> new Document(null, null, path.getFileName().toString(), readContent(path)))
+                .collect(Collectors.toSet());
+    }
+
+    @NotNull
+    @SneakyThrows
+    private static String readContent(Path path) {
+        return new String(IOUtils.toByteArray(path.toUri()));
     }
 
     /**
