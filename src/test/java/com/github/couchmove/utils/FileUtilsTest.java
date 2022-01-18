@@ -17,6 +17,7 @@ import java.util.stream.Stream;
 import static com.github.couchmove.pojo.Type.DESIGN_DOC;
 import static com.github.couchmove.pojo.Type.N1QL;
 import static com.github.couchmove.utils.TestUtils.getRandomString;
+import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -26,11 +27,13 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  */
 public class FileUtilsTest {
 
-    public static final String DB_MIGRATION_PATH = "db/migration/success/";
+    public static final String DB_MIGRATION_PATH = "db/migration/";
+    public static final String SUCCESS_PATH = DB_MIGRATION_PATH + "success/";
+    public static final String COLLECTION_PATH = DB_MIGRATION_PATH + "collections/";
 
     @Test
     public void should_get_file_path_from_resource() throws Exception {
-        Path path = FileUtils.getPathFromResource(DB_MIGRATION_PATH + "V1__user.json");
+        Path path = FileUtils.getPathFromResource(SUCCESS_PATH + "V1__user.json");
         Assert.assertNotNull(path);
         File file = path.toFile();
         Assert.assertTrue(file.exists());
@@ -48,9 +51,10 @@ public class FileUtilsTest {
 
     private static Stream<Arguments> fileSource() {
         return Stream.of(
-                Arguments.of(DB_MIGRATION_PATH + "V0.1__insert_users", "99a4aaf12e7505286afe2a5b074f7ebabd496f3ea8c4093116efd3d096c430a8"),
-                Arguments.of(DB_MIGRATION_PATH + "V0__create_index.n1ql", "1a417b9f5787e52a46bc65bcd801e8f3f096e63ebcf4b0a17410b16458124af3"),
-                Arguments.of(DB_MIGRATION_PATH + "V1__user.json", "22df7f8496c21a3e1f3fbd241592628ad6a07797ea5d501df8ab6c65c94dbb79")
+                Arguments.of(SUCCESS_PATH + "V0.1__insert_users", "99a4aaf12e7505286afe2a5b074f7ebabd496f3ea8c4093116efd3d096c430a8"),
+                Arguments.of(SUCCESS_PATH + "V0__create_index.n1ql", "1a417b9f5787e52a46bc65bcd801e8f3f096e63ebcf4b0a17410b16458124af3"),
+                Arguments.of(SUCCESS_PATH + "V1__user.json", "22df7f8496c21a3e1f3fbd241592628ad6a07797ea5d501df8ab6c65c94dbb79"),
+                Arguments.of(COLLECTION_PATH + "V0.1__insert_users", "873831eed9a55a6e7d4445d39cbd2229c1bd41361d5ef9ab300bf56ad4f57940")
         );
     }
 
@@ -87,15 +91,24 @@ public class FileUtilsTest {
         Files.write(content2.getBytes(), file2);
         // txt file
         Files.write(getRandomString().getBytes(), File.createTempFile(getRandomString(), ".txt", tempDir));
+        // json file with scope/collection directories
+        var scope = "scope";
+        var collection = "collection";
+        var collectionDir = new File(tempDir, format("%s/%s", scope, collection));
+        collectionDir.mkdirs();
+        File file3 = File.createTempFile("file3", ".json", collectionDir);
+        String content3 = "content3";
+        Files.write(content3.getBytes(), file3);
 
         // When we read files in this directory with extension filter
         var results = FileUtils.readFilesInDirectory(tempDir.toPath(), "json", "n1ql");
 
         // Then we should have file content matching this extension
-        assertThat(results).hasSize(2);
+        assertThat(results).hasSize(3);
         assertThat(results).containsExactlyInAnyOrder(
                 new Document(null, null, file1.getName(), content1),
-                new Document(null, null, file2.getName(), content2)
+                new Document(null, null, file2.getName(), content2),
+                new Document(scope, collection, file3.getName(), content3)
         );
     }
 }
