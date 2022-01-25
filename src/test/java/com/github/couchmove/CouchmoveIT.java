@@ -1,25 +1,24 @@
 package com.github.couchmove;
 
+import com.couchbase.client.core.error.ScopeNotFoundException;
+import com.couchbase.client.java.Collection;
+import com.couchbase.client.java.manager.collection.CollectionManager;
+import com.couchbase.client.java.manager.collection.CollectionSpec;
 import com.couchbase.client.java.manager.query.QueryIndex;
 import com.couchbase.client.java.manager.view.DesignDocument;
 import com.couchbase.client.java.view.DesignDocumentNamespace;
 import com.github.couchmove.exception.CouchmoveException;
-import com.github.couchmove.pojo.ChangeLog;
-import com.github.couchmove.pojo.Status;
-import com.github.couchmove.pojo.Type;
-import com.github.couchmove.pojo.User;
+import com.github.couchmove.pojo.*;
 import com.github.couchmove.repository.CouchbaseRepository;
 import com.github.couchmove.repository.CouchbaseRepositoryImpl;
 import com.github.couchmove.service.ChangeLogDBService;
 import com.github.couchmove.utils.BaseIT;
+import lombok.var;
 import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.time.Duration;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -37,6 +36,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class CouchmoveIT extends BaseIT {
 
     public static final String DB_MIGRATION = "db/migration/";
+    public static final String COUCHMOVE_SCOPE = "couchmove";
+    public static final String COLLECTION = "changelog";
+    public static final String TEST_SCOPE = "test";
 
     private static CouchbaseRepository<ChangeLog> changeLogRepository;
 
@@ -49,6 +51,17 @@ public class CouchmoveIT extends BaseIT {
         changeLogRepository = new CouchbaseRepositoryImpl<>(getCluster(), getBucket(), ChangeLog.class);
         changeLogDBService = new ChangeLogDBService(getBucket(), getCluster());
         userRepository = new CouchbaseRepositoryImpl<>(getCluster(), getBucket(), User.class);
+    }
+
+    @AfterEach
+    public void clean() {
+        CollectionManager collections = getBucket().collections();
+        try {
+            collections.dropScope(TEST_SCOPE);
+            collections.dropScope(COUCHMOVE_SCOPE);
+        } catch (ScopeNotFoundException e) {
+            // Ignore if scopes doesn't exist
+        }
     }
 
     @Test
@@ -244,16 +257,56 @@ public class CouchmoveIT extends BaseIT {
         couchmove.migrate();
 
         // Then all changeLogs should be inserted in DB
-        List<ChangeLog> changeLogs = Stream.of("0.1")
+        List<ChangeLog> changeLogs = Stream.of("0", "0.1")
                 .map(version -> PREFIX_ID + version)
                 .map(changeLogRepository::findOne)
                 .collect(Collectors.toList());
 
-        assertEquals(1, changeLogs.size());
+        assertEquals(2, changeLogs.size());
+
         assertLike(changeLogs.get(0),
-                "0.1", 1, "insert users", DOCUMENTS, "V0.1__insert_users",
+                "0", 1, "create scope and collection", N1QL, "V0__create_scope_and_collection.n1ql",
+                "6c7949817c74cd62d480c4c5c0638f16dd111dca1b14ac560a6aee53d9617d0c",
+                EXECUTED);
+
+        assertLike(changeLogs.get(1),
+                "0.1", 2, "insert users", DOCUMENTS, "V0.1__insert_users",
                 "873831eed9a55a6e7d4445d39cbd2229c1bd41361d5ef9ab300bf56ad4f57940",
                 EXECUTED);
+
+        // Users inserted
+        CouchbaseRepositoryImpl<User> userCollectionRepository = userRepository.withCollection(TEST_SCOPE, "user");
+        assertEquals(new User("user", "titi", "01/09/1998"), userCollectionRepository.findOne("titi"));
+        assertEquals(new User("user", "toto", "10/01/1991"), userCollectionRepository.findOne("toto"));
+    }
+
+    @Test
+    public void should_insert_changelogs_into_collection() {
+        // Given a new scope/collection
+        CollectionManager collections = getBucket().collections();
+        collections.createScope(COUCHMOVE_SCOPE);
+        collections.createCollection(CollectionSpec.create(COLLECTION, COUCHMOVE_SCOPE));
+        Collection collection = getBucket().scope(COUCHMOVE_SCOPE).collection(COLLECTION);
+
+        // And a Couchmove instance configured with this collection
+        var couchmove = new Couchmove(collection, getCluster(), DB_MIGRATION + "collections");
+
+        // When we launch migration
+        couchmove.migrate();
+
+        // Then all changeLogs should be inserted in the same collection
+        var collectionChangeLogRepository = changeLogRepository.withCollection(COUCHMOVE_SCOPE, COLLECTION);
+        List<ChangeLog> changeLogs = Stream.of("0", "0.1")
+                .map(version -> PREFIX_ID + version)
+                .map(collectionChangeLogRepository::findOne)
+                .collect(Collectors.toList());
+
+        assertEquals(2, changeLogs.size());
+
+        // Users inserted in the right collection
+        CouchbaseRepositoryImpl<User> userCollectionRepository = userRepository.withCollection(TEST_SCOPE, "user");
+        assertEquals(new User("user", "titi", "01/09/1998"), userCollectionRepository.findOne("titi"));
+        assertEquals(new User("user", "toto", "10/01/1991"), userCollectionRepository.findOne("toto"));
     }
 
     private static void assertLike(ChangeLog changeLog, String version, Integer order, String description, Type type, String script, String checksum, Status status) {

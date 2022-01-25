@@ -16,6 +16,8 @@ import java.util.Map;
  */
 public interface CouchbaseRepository<E extends CouchbaseEntity> {
 
+    CouchbaseRepository<E> withCollection(String scope, String collection);
+
     /**
      * Convert an {@link CouchbaseEntity} to json document, and save it to Couchbase {@link Bucket}
      *

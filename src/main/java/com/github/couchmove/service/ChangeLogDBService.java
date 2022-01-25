@@ -7,6 +7,7 @@ import com.github.couchmove.exception.CouchmoveException;
 import com.github.couchmove.pojo.*;
 import com.github.couchmove.repository.CouchbaseRepository;
 import com.github.couchmove.repository.CouchbaseRepositoryImpl;
+import lombok.var;
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,7 +31,11 @@ public class ChangeLogDBService {
     private final CouchbaseRepository<ChangeLog> repository;
 
     public ChangeLogDBService(Bucket bucket, Cluster cluster) {
-        this.repository = new CouchbaseRepositoryImpl<>(bucket, cluster, ChangeLog.class);
+        this.repository = new CouchbaseRepositoryImpl<>(cluster, bucket, ChangeLog.class);
+    }
+
+    public ChangeLogDBService(com.couchbase.client.java.Collection collection, Cluster cluster) {
+        this.repository = new CouchbaseRepositoryImpl<>(cluster, collection, ChangeLog.class);
     }
 
     ChangeLogDBService(CouchbaseRepository<ChangeLog> repository) {
@@ -129,8 +134,13 @@ public class ChangeLogDBService {
      */
     public void importDocuments(Collection<Document> documents) {
         logger.info("Importing {} documents", documents.size());
-        documents.forEach(document ->
-                repository.save(FilenameUtils.getBaseName(document.getFileName()), document.getContent()));
+        for (Document document : documents) {
+            var repo = repository;
+            if (document.getCollection() != null) {
+                repo = repository.withCollection(document.getScope(), document.getCollection());
+            }
+            repo.save(FilenameUtils.getBaseName(document.getFileName()), document.getContent());
+        }
     }
 
     /**

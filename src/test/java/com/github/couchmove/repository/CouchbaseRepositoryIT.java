@@ -2,6 +2,7 @@ package com.github.couchmove.repository;
 
 import com.couchbase.client.core.error.CasMismatchException;
 import com.couchbase.client.core.error.DocumentExistsException;
+import com.couchbase.client.java.manager.collection.CollectionSpec;
 import com.couchbase.client.java.manager.query.QueryIndex;
 import com.couchbase.client.java.manager.search.SearchIndex;
 import com.couchbase.client.java.manager.view.DesignDocument;
@@ -9,27 +10,26 @@ import com.couchbase.client.java.view.DesignDocumentNamespace;
 import com.github.couchmove.exception.CouchmoveException;
 import com.github.couchmove.pojo.ChangeLog;
 import com.github.couchmove.pojo.Type;
-import com.github.couchmove.utils.BaseIT;
-import com.github.couchmove.utils.FileUtils;
-import com.github.couchmove.utils.TestUtils;
+import com.github.couchmove.utils.*;
 import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.testcontainers.shaded.com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.github.couchmove.CouchmoveIT.DB_MIGRATION;
 import static com.github.couchmove.utils.TestUtils.getRandomString;
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 /**
  * @author ctayeb
@@ -41,15 +41,21 @@ public class CouchbaseRepositoryIT extends BaseIT {
 
     public static final String TEST = "test";
 
-    private static CouchbaseRepository<ChangeLog> repository;
-
-    @BeforeEach
-    public void setUp() {
-        repository = new CouchbaseRepositoryImpl<>(getBucket(), getCluster(), ChangeLog.class);
+    @BeforeAll
+    static void init() {
+        getBucket().collections().createCollection(CollectionSpec.create("collection"));
     }
 
-    @Test
-    public void should_save_and_get_entity() {
+    static Stream<Arguments> repositoryParams() {
+        return Stream.of(
+                arguments("Bucket", new CouchbaseRepositoryImpl<>(getCluster(), getBucket(), ChangeLog.class)),
+                arguments("Collection", new CouchbaseRepositoryImpl<>(getCluster(), getBucket().collection("collection"), ChangeLog.class))
+        );
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("repositoryParams")
+    public void should_save_and_get_entity(String description, CouchbaseRepository<ChangeLog> repository) {
         // Given a changeLog
         ChangeLog changeLog = TestUtils.getRandomChangeLog();
 
@@ -71,8 +77,9 @@ public class CouchbaseRepositoryIT extends BaseIT {
         Assert.assertEquals(savedChangeLog.getCas(), result.getCas());
     }
 
-    @Test
-    public void should_delete_entity() {
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("repositoryParams")
+    public void should_delete_entity(String description, CouchbaseRepository<ChangeLog> repository) {
         // Given a changeLog saved on couchbase
         ChangeLog changeLog = TestUtils.getRandomChangeLog();
 
@@ -87,8 +94,9 @@ public class CouchbaseRepositoryIT extends BaseIT {
         Assert.assertNull(repository.findOne(id));
     }
 
-    @Test
-    public void should_not_replace_entity_without_cas() {
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("repositoryParams")
+    public void should_not_replace_entity_without_cas(String description, CouchbaseRepository<ChangeLog> repository) {
         // Given a changeLog saved on couchbase
         ChangeLog changeLog = TestUtils.getRandomChangeLog();
         String id = getRandomString();
@@ -101,8 +109,9 @@ public class CouchbaseRepositoryIT extends BaseIT {
         assertThrows(DocumentExistsException.class, () -> repository.checkAndSave(id, changeLog));
     }
 
-    @Test
-    public void should_not_insert_entity_with_different_cas() {
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("repositoryParams")
+    public void should_not_insert_entity_with_different_cas(String description, CouchbaseRepository<ChangeLog> repository) {
         // Given a changeLog saved on couchbase
         ChangeLog changeLog = TestUtils.getRandomChangeLog();
         String id = getRandomString();
@@ -119,8 +128,9 @@ public class CouchbaseRepositoryIT extends BaseIT {
         assertThrows(CasMismatchException.class, () -> repository.checkAndSave(id, savedChangeLog));
     }
 
-    @Test
-    public void should_import_design_doc() {
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("repositoryParams")
+    public void should_import_design_doc(String description, CouchbaseRepository<ChangeLog> repository) {
         // Given a Design Doc
         String name = "user";
         String design_doc = "{\n" +
@@ -139,8 +149,9 @@ public class CouchbaseRepositoryIT extends BaseIT {
         Assert.assertNotNull(designDocument);
     }
 
-    @Test
-    public void should_import_fts_index() throws IOException {
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("repositoryParams")
+    public void should_import_fts_index(String description, CouchbaseRepository<ChangeLog> repository) throws IOException {
         // Given a fts index json definition file
         String ftsIndex = IOUtils.toString(FileUtils.getPathFromResource(DB_MIGRATION + "test.fts").toUri(), Charset.defaultCharset());
 
@@ -156,22 +167,28 @@ public class CouchbaseRepositoryIT extends BaseIT {
         // Ensure params is created as specified
         SearchIndex searchIndex = ((CouchbaseRepositoryImpl<?>) repository).getFtsIndex(TEST).get();
         assertThat(searchIndex.params()).isEqualTo(ftsIndexMap.get("params"));
+
+        // Clean
+        getCluster().searchIndexes().dropIndex(TEST);
     }
 
-    @Test
-    public void should_check_fts_index_not_exists() {
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("repositoryParams")
+    public void should_check_fts_index_not_exists(String description, CouchbaseRepository<ChangeLog> repository) {
         assertThat(repository.isFtsIndexExists("toto")).isFalse();
     }
 
-    @Test
-    public void should_inject_bucket_name() {
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("repositoryParams")
+    public void should_inject_bucket_name(String description, CouchbaseRepository<ChangeLog> repository) {
         String format = "SELECT * FROM `%s`";
         String statement = format(format, "${bucket}");
         Assert.assertEquals(format(format, getBucket().name()), ((CouchbaseRepositoryImpl) repository).injectParameters(statement));
     }
 
-    @Test
-    public void should_execute_n1ql() {
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("repositoryParams")
+    public void should_execute_n1ql(String description, CouchbaseRepository<ChangeLog> repository) {
         // Given a primary index request
         String request = format("CREATE INDEX `%s` ON `${bucket}`(`%s`)", INDEX_NAME, INDEX_NAME);
 
@@ -186,10 +203,14 @@ public class CouchbaseRepositoryIT extends BaseIT {
         QueryIndex indexInfo = indexInfos.get(0);
         Assert.assertEquals(INDEX_NAME, indexInfo.name());
         Assert.assertEquals(format("`%s`", INDEX_NAME), indexInfo.indexKey().get(0));
+
+        // Clean
+        getCluster().queryIndexes().dropIndex(getBucket().name(), INDEX_NAME);
     }
 
-    @Test
-    public void should_execute_n1ql_parse_fail() {
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("repositoryParams")
+    public void should_execute_n1ql_parse_fail(String description, CouchbaseRepository<ChangeLog> repository) {
         // Given an invalid request
         String request = format("CREATE INDEX `%s`", INDEX_NAME);
 
@@ -197,8 +218,9 @@ public class CouchbaseRepositoryIT extends BaseIT {
         assertThrows(CouchmoveException.class, () -> repository.query(request));
     }
 
-    @Test
-    public void should_execute_n1ql_fail() {
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("repositoryParams")
+    public void should_execute_n1ql_fail(String description, CouchbaseRepository<ChangeLog> repository) {
         // Given an index on invalid bucket
         String request = format("CREATE INDEX `%s` on toto(%s)", INDEX_NAME, INDEX_NAME);
 
@@ -206,8 +228,9 @@ public class CouchbaseRepositoryIT extends BaseIT {
         assertThrows(CouchmoveException.class, () -> repository.query(request));
     }
 
-    @Test
-    public void should_save_json_document() {
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("repositoryParams")
+    public void should_save_json_document(String description, CouchbaseRepository<ChangeLog> repository) {
         // Given a json document
         String json = "{\n" +
                 "  \"version\": \"1\",\n" +

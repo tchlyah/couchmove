@@ -1,7 +1,6 @@
 package com.github.couchmove;
 
-import com.couchbase.client.java.Bucket;
-import com.couchbase.client.java.Cluster;
+import com.couchbase.client.java.*;
 import com.github.couchmove.exception.CouchmoveException;
 import com.github.couchmove.pojo.ChangeLog;
 import com.github.couchmove.pojo.Status;
@@ -41,7 +40,7 @@ public class Couchmove {
 
     private static final Logger logger = LoggerFactory.getLogger(Couchmove.class);
 
-    private String bucketName;
+    private String collectionOrBucketName;
 
     private ChangeLockService lockService;
 
@@ -64,13 +63,37 @@ public class Couchmove {
      * Initialize a {@link Couchmove} instance
      *
      * @param bucket     Couchbase {@link Bucket} to execute the migrations on
-     * @param cluster    Couchbase {@link Cluster} to execute N1ql Requets and insert FTS indexes
+     * @param cluster    Couchbase {@link Cluster} to execute N1ql Requests and insert FTS indexes
      * @param changePath absolute or relative path of the migration folder containing {@link ChangeLog}
      */
     public Couchmove(Bucket bucket, Cluster cluster, String changePath) {
-        logger.info("Connected to bucket '{}'", bucketName = bucket.name());
+        logger.info("Connected to bucket '{}'", collectionOrBucketName = bucket.name());
         lockService = new ChangeLockService(bucket, cluster);
         dbService = new ChangeLogDBService(bucket, cluster);
+        fileService = new ChangeLogFileService(changePath);
+    }
+
+    /**
+     * Initialize a {@link Couchmove} instance with default migration path : {@value DEFAULT_MIGRATION_PATH}
+     *
+     * @param collection  Couchbase {@link Collection} to execute the migrations on
+     * @param cluster Couchbase {@link Cluster} to execute N1ql Requets and insert FTS indexes
+     */
+    public Couchmove(Collection collection, Cluster cluster) {
+        this(collection, cluster, DEFAULT_MIGRATION_PATH);
+    }
+
+    /**
+     * Initialize a {@link Couchmove} instance
+     *
+     * @param collection     Couchbase {@link Collection} to execute the migrations on
+     * @param cluster    Couchbase {@link Cluster} to execute N1ql Requets and insert FTS indexes
+     * @param changePath absolute or relative path of the migration folder containing {@link ChangeLog}
+     */
+    public Couchmove(Collection collection, Cluster cluster, String changePath) {
+        logger.info("Connected to collection '{}'", collectionOrBucketName = collection.name());
+        lockService = new ChangeLockService(collection, cluster);
+        dbService = new ChangeLogDBService(collection, cluster);
         fileService = new ChangeLogFileService(changePath);
     }
 
@@ -86,11 +109,11 @@ public class Couchmove {
      * @throws CouchmoveException if migration fail
      */
     public void migrate() throws CouchmoveException {
-        logger.info("Begin bucket '{}' update", bucketName);
+        logger.info("Begin '{}' update", collectionOrBucketName);
         try {
             // Acquire bucket lock
             if (!lockService.acquireLock()) {
-                logger.error("Couchmove did not acquire bucket '{}' change log lock. Exiting...", bucketName);
+                logger.error("Couchmove did not acquire '{}' change log lock. Exiting...", collectionOrBucketName);
                 throw new CouchmoveException("Unable to acquire lock");
             }
 
