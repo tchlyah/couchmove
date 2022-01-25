@@ -5,20 +5,13 @@ import com.couchbase.client.core.deps.com.fasterxml.jackson.core.type.TypeRefere
 import com.couchbase.client.core.deps.com.fasterxml.jackson.databind.JsonNode;
 import com.couchbase.client.core.deps.com.fasterxml.jackson.databind.ObjectMapper;
 import com.couchbase.client.core.deps.com.fasterxml.jackson.databind.node.ObjectNode;
-import com.couchbase.client.core.error.CouchbaseException;
-import com.couchbase.client.core.error.DocumentNotFoundException;
-import com.couchbase.client.core.error.IndexNotFoundException;
+import com.couchbase.client.core.error.*;
 import com.couchbase.client.core.json.Mapper;
 import com.couchbase.client.core.retry.BestEffortRetryStrategy;
-import com.couchbase.client.java.Bucket;
-import com.couchbase.client.java.Cluster;
 import com.couchbase.client.java.Collection;
-import com.couchbase.client.java.CommonOptions;
+import com.couchbase.client.java.*;
 import com.couchbase.client.java.codec.RawJsonTranscoder;
-import com.couchbase.client.java.kv.GetOptions;
-import com.couchbase.client.java.kv.GetResult;
-import com.couchbase.client.java.kv.MutationResult;
-import com.couchbase.client.java.kv.UpsertOptions;
+import com.couchbase.client.java.kv.*;
 import com.couchbase.client.java.manager.query.QueryIndex;
 import com.couchbase.client.java.manager.search.SearchIndex;
 import com.couchbase.client.java.manager.view.DesignDocument;
@@ -28,17 +21,15 @@ import com.couchbase.client.java.query.QueryScanConsistency;
 import com.couchbase.client.java.view.DesignDocumentNamespace;
 import com.github.couchmove.exception.CouchmoveException;
 import com.github.couchmove.pojo.CouchbaseEntity;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.RequiredArgsConstructor;
+import lombok.*;
 import org.apache.commons.lang.text.StrSubstitutor;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
+import reactor.core.publisher.Mono;
+import reactor.util.retry.Retry;
 
 import java.time.Duration;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.couchbase.client.java.kv.InsertOptions.insertOptions;
@@ -64,21 +55,40 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
     private static final ObjectMapper jsonMapper = new ObjectMapper();
 
     public static final String BUCKET_PARAM = "bucket";
+    public static final int MAX_ATTEMPTS = 5;
 
     private final Bucket bucket;
 
     private final Cluster cluster;
 
-    @Getter(lazy = true)
-    private final Collection collection = bucket.defaultCollection();
+    private final Collection collection;
 
     private final Class<E> entityClass;
+
+    public CouchbaseRepositoryImpl(Cluster cluster, Collection collection, Class<E> entityClass) {
+        this.cluster = cluster;
+        this.bucket = cluster.bucket(collection.bucketName());
+        this.collection = collection;
+        this.entityClass = entityClass;
+    }
+
+    public CouchbaseRepositoryImpl(Cluster cluster, Bucket bucket, Class<E> entityClass) {
+        this.cluster = cluster;
+        this.bucket = bucket;
+        this.collection = bucket.defaultCollection();
+        this.entityClass = entityClass;
+    }
+
+    @Override
+    public CouchbaseRepositoryImpl<E> withCollection(String scope, String collection) {
+        return new CouchbaseRepositoryImpl<>(cluster, bucket.scope(scope).collection(collection), entityClass);
+    }
 
     @Override
     public E save(String id, E entity) {
         logger.trace("Save entity '{}' with id '{}'", entity, id);
         try {
-            MutationResult insertedDocument = getCollection().upsert(id, entity);
+            MutationResult insertedDocument = collection.upsert(id, entity);
             entity.setCas(insertedDocument.cas());
             return entity;
         } catch (CouchbaseException e) {
@@ -91,9 +101,9 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
         logger.trace("Check and save entity '{}' with id '{}'", entity, id);
         MutationResult insertedDocument;
         if (entity.getCas() != null) {
-            insertedDocument = getCollection().replace(id, entity, withRetry(replaceOptions().cas(entity.getCas())));
+            insertedDocument = collection.replace(id, entity, withRetry(replaceOptions().cas(entity.getCas())));
         } else {
-            insertedDocument = getCollection().insert(id, entity, withRetry(insertOptions()));
+            insertedDocument = collection.insert(id, entity, withRetry(insertOptions()));
         }
         entity.setCas(insertedDocument.cas());
         return entity;
@@ -103,7 +113,7 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
     public void delete(String id) {
         logger.trace("Remove entity with id '{}'", id);
         try {
-            getCollection().remove(id);
+            collection.remove(id);
         } catch (DocumentNotFoundException e) {
             logger.debug("Trying to delete document that does not exist : '{}'", id);
         }
@@ -113,7 +123,7 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
     public E findOne(String id) {
         logger.trace("Find entity with id '{}'", id);
         try {
-            GetResult document = getCollection().get(id, withRetry(GetOptions.getOptions()));
+            GetResult document = collection.get(id, withRetry(GetOptions.getOptions()));
             E entity = document.contentAs(entityClass);
             entity.setCas(document.cas());
             return entity;
@@ -127,7 +137,7 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
     @Override
     public void save(String id, String jsonContent) {
         logger.trace("Save document with id '{}' : \n'{}'", id, jsonContent);
-        getCollection().upsert(id, jsonContent, withRetry(UpsertOptions.upsertOptions().transcoder(RawJsonTranscoder.INSTANCE)));
+        collection.upsert(id, jsonContent, withRetry(UpsertOptions.upsertOptions().transcoder(RawJsonTranscoder.INSTANCE)));
     }
 
     @Override
@@ -150,7 +160,8 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
         String parametrizedStatement = injectParameters(n1qlStatement);
         logger.debug("Execute n1ql request : \n{}", parametrizedStatement);
         try {
-            cluster.query(parametrizedStatement, withRetry(QueryOptions.queryOptions().scanConsistency(QueryScanConsistency.REQUEST_PLUS)));
+            retry(() -> cluster.query(parametrizedStatement, withRetry(QueryOptions.queryOptions().scanConsistency(QueryScanConsistency.REQUEST_PLUS))),
+                    "12021");
         } catch (Exception e) {
             throw new CouchmoveException("Unable to execute n1ql request", e);
         }
@@ -187,7 +198,7 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
 
     @Override
     public String getBucketName() {
-        return getCollection().bucketName();
+        return collection.bucketName();
     }
 
     @Override
@@ -205,6 +216,16 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
 
     private static <SELF extends CommonOptions<SELF>> SELF withRetry(SELF options) {
         return options.retryStrategy(BestEffortRetryStrategy.INSTANCE);
+    }
+
+    private static void retry(Runnable runnable, String errorContains) {
+        Mono
+                .defer(() -> Mono.fromRunnable(runnable))
+                .retryWhen(Retry.backoff(MAX_ATTEMPTS, Duration.ofMillis(500))
+                        .filter(t -> t.getMessage().contains(errorContains))
+                        .doBeforeRetry(retrySignal ->
+                                logger.debug("Error while executing request, retrying {}/{}", retrySignal.totalRetries(), MAX_ATTEMPTS)))
+                .block();
     }
 
 }

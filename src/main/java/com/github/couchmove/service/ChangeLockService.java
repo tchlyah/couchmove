@@ -2,8 +2,7 @@ package com.github.couchmove.service;
 
 import com.couchbase.client.core.error.CasMismatchException;
 import com.couchbase.client.core.error.DocumentExistsException;
-import com.couchbase.client.java.Bucket;
-import com.couchbase.client.java.Cluster;
+import com.couchbase.client.java.*;
 import com.github.couchmove.exception.CouchmoveException;
 import com.github.couchmove.pojo.ChangeLock;
 import com.github.couchmove.repository.CouchbaseRepository;
@@ -32,7 +31,11 @@ public class ChangeLockService {
     private String uuid;
 
     public ChangeLockService(Bucket bucket, Cluster cluster) {
-        this.repository = new CouchbaseRepositoryImpl<>(bucket, cluster, ChangeLock.class);
+        this.repository = new CouchbaseRepositoryImpl<>(cluster, bucket, ChangeLock.class);
+    }
+
+    public ChangeLockService(Collection collection, Cluster cluster) {
+        this.repository = new CouchbaseRepositoryImpl<>(cluster, collection, ChangeLock.class);
     }
 
     /**
