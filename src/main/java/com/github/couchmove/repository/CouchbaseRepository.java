@@ -100,6 +100,21 @@ public interface CouchbaseRepository<E extends CouchbaseEntity> {
     boolean isFtsIndexExists(String name);
 
     /**
+     * Inserts Eventing Functions
+     *
+     * @param name name of the Eventing Functions to insert
+     * @param content the content of the Eventing Functions to insert
+     */
+    void importEventingFunctions(String name, String content);
+
+    /**
+     * Verify if an Eventing Function exists
+     *
+     * @param name name of the Eventing Function to verify
+     */
+    boolean isEventingFunctionExists(String name);
+
+    /**
      * @return name of the repository Couchbase {@link Bucket}
      */
     String getBucketName();

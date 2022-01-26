@@ -17,6 +17,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import static com.github.couchmove.pojo.Status.*;
+import static com.github.couchmove.pojo.Type.DOCUMENTS;
 import static com.github.couchmove.utils.Utils.elapsed;
 import static java.lang.String.format;
 
@@ -283,25 +284,32 @@ public class Couchmove {
      * @throws CouchmoveException if the execution fail
      */
     void doExecute(ChangeLog changeLog) {
+        Type type = changeLog.getType();
         try {
-            switch (changeLog.getType()) {
-                case DOCUMENTS:
-                    dbService.importDocuments(fileService.readDocuments(changeLog.getScript()));
-                    break;
-                case N1QL:
-                    dbService.executeN1ql(fileService.readFile(changeLog.getScript()));
-                    break;
-                case DESIGN_DOC:
-                    dbService.importDesignDoc(changeLog.getDescription().replace(" ", "_"), fileService.readFile(changeLog.getScript()));
-                    break;
-                case FTS:
-                    dbService.importFtsIndex(changeLog.getDescription().replace(" ", "_"), fileService.readFile(changeLog.getScript()));
-                    break;
-                default:
-                    throw new IllegalArgumentException("Unknown ChangeLog Type '" + changeLog.getType() + "'");
+            if (type == DOCUMENTS) {
+                dbService.importDocuments(fileService.readDocuments(changeLog.getScript()));
+            } else {
+                var description = changeLog.getDescription().replace(" ", "_");
+                var content = fileService.readFile(changeLog.getScript());
+                switch (type) {
+                    case N1QL:
+                        dbService.executeN1ql(content);
+                        return;
+                    case DESIGN_DOC:
+                        dbService.importDesignDoc(description, content);
+                        return;
+                    case FTS:
+                        dbService.importFtsIndex(description, content);
+                        return;
+                    case EVENTING:
+                        dbService.importEventingFunctions(description, content);
+                        return;
+                    default:
+                        throw new IllegalArgumentException("Unknown ChangeLog Type '" + type + "'");
+                }
             }
         } catch (Exception e) {
-            throw new CouchmoveException("Unable to import " + changeLog.getType().name().toLowerCase().replace("_", " ") + " : '" + changeLog.getScript() + "'", e);
+            throw new CouchmoveException("Unable to import " + type.name().toLowerCase().replace("_", " ") + " : '" + changeLog.getScript() + "'", e);
         }
     }
 }

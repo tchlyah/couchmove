@@ -159,6 +159,17 @@ public class ChangeLogDBService {
     }
 
     /**
+     * Inserts an Eventing Functions
+     *
+     * @param description of the Eventing functions to insert
+     * @param content content of the Eventing Functions to insert
+     */
+    public void importEventingFunctions(String description, String content) {
+        logger.info("Inserting Eventing Function '{}'...", description);
+        repository.importEventingFunctions(description, content);
+    }
+
+    /**
      * Watches all indexes, polling the query service until they become
      * "online" or the timeout has expired
      *

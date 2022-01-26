@@ -55,6 +55,9 @@ public class ChangeLogFileServiceTest {
         // For FTS files
         assertThat(ChangeLogFileService.getChangeLogType(Paths.get("toto.fts"))).isEqualTo(Type.FTS);
         assertThat(ChangeLogFileService.getChangeLogType(Paths.get("toto.FtS"))).isEqualTo(Type.FTS);
+        // For Eventing files
+        Assert.assertEquals(Type.EVENTING, ChangeLogFileService.getChangeLogType(Paths.get("toto.eventing")));
+        Assert.assertEquals(Type.EVENTING, ChangeLogFileService.getChangeLogType(Paths.get("toto.Eventing")));
     }
 
     @Test
@@ -92,7 +95,14 @@ public class ChangeLogFileServiceTest {
                                 .version("2")
                                 .description("name")
                                 .checksum("6ef9c3cc661804f7f0eb489e678971619a81b5457cff9355e28db9dbf835ea0a")
-                                .build())
+                                .build(),
+                ChangeLog.builder()
+                        .type(Type.EVENTING)
+                        .script("V3__test.eventing")
+                        .version("3")
+                        .description("test")
+                        .checksum("d088945774720c9fd625394dca7528dd88eba8a12378ad312117eca3c3f8f645")
+                        .build())
                 .collect(Collectors.toList());
         assertThat(new ChangeLogFileService("db/migration/success").fetch()).isEqualTo(changeLogs);
     }

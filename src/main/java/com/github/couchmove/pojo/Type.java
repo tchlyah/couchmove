@@ -31,7 +31,12 @@ public enum Type {
     /**
      * fts json file containing Full Text Search index definition
      */
-    FTS(Constants.FTS);
+    FTS(Constants.FTS),
+
+    /**
+     * Eventing json file containing Function definition
+     */
+    EVENTING(Constants.EVENTING);
 
     @Getter
     private final String extension;
@@ -44,6 +49,7 @@ public enum Type {
         public static final String JSON = "json";
         public static final String N1QL = "n1ql";
         public static final String FTS = "fts";
+        public static final String EVENTING = "eventing";
     }
 
     public static Type fromExtension(String extension) {

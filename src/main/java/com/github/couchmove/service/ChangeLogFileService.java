@@ -20,8 +20,7 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import static com.github.couchmove.pojo.Type.Constants.JSON;
-import static com.github.couchmove.pojo.Type.DESIGN_DOC;
-import static com.github.couchmove.pojo.Type.N1QL;
+import static com.github.couchmove.pojo.Type.*;
 import static java.nio.file.Files.newDirectoryStream;
 
 /**
@@ -65,7 +64,7 @@ public class ChangeLogFileService {
                             .script(fileName)
                             .description(matcher.group(2).replace("_", " "))
                             .type(getChangeLogType(path))
-                            .checksum(FileUtils.calculateChecksum(path, DESIGN_DOC.getExtension(), N1QL.getExtension()))
+                            .checksum(FileUtils.calculateChecksum(path, DESIGN_DOC.getExtension(), N1QL.getExtension(), Type.FTS.getExtension(), EVENTING.getExtension()))
                             .build();
                 })
                 .filter(Objects::nonNull)

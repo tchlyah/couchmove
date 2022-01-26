@@ -13,6 +13,7 @@ import com.couchbase.client.java.*;
 import com.couchbase.client.java.codec.RawJsonTranscoder;
 import com.couchbase.client.java.kv.*;
 import com.couchbase.client.java.manager.collection.*;
+import com.couchbase.client.java.manager.eventing.EventingFunction;
 import com.couchbase.client.java.manager.query.BuildQueryIndexOptions;
 import com.couchbase.client.java.manager.query.QueryIndex;
 import com.couchbase.client.java.manager.search.SearchIndex;
@@ -23,6 +24,7 @@ import com.couchbase.client.java.query.QueryScanConsistency;
 import com.couchbase.client.java.view.DesignDocumentNamespace;
 import com.github.couchmove.exception.CouchmoveException;
 import com.github.couchmove.pojo.CouchbaseEntity;
+import com.github.couchmove.pojo.mixin.EventingFunctionMixin;
 import lombok.*;
 import org.apache.commons.lang.text.StrSubstitutor;
 import org.jetbrains.annotations.NotNull;
@@ -39,11 +41,13 @@ import static com.couchbase.client.java.kv.ReplaceOptions.replaceOptions;
 import static com.couchbase.client.java.manager.collection.CreateCollectionOptions.createCollectionOptions;
 import static com.couchbase.client.java.manager.collection.CreateScopeOptions.createScopeOptions;
 import static com.couchbase.client.java.manager.collection.GetAllScopesOptions.getAllScopesOptions;
+import static com.couchbase.client.java.manager.eventing.UpsertFunctionOptions.upsertFunctionOptions;
 import static com.couchbase.client.java.manager.query.BuildQueryIndexOptions.buildDeferredQueryIndexesOptions;
 import static com.couchbase.client.java.manager.query.GetAllQueryIndexesOptions.getAllQueryIndexesOptions;
 import static com.couchbase.client.java.manager.query.WatchQueryIndexesOptions.watchQueryIndexesOptions;
 import static com.couchbase.client.java.manager.search.UpsertSearchIndexOptions.upsertSearchIndexOptions;
 import static com.google.common.collect.ImmutableMap.of;
+import static java.lang.String.format;
 import static lombok.AccessLevel.PACKAGE;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -60,7 +64,7 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
     private static final Logger logger = getLogger(CouchbaseRepositoryImpl.class);
 
     @Getter(lazy = true)
-    private static final ObjectMapper jsonMapper = new ObjectMapper();
+    private static final ObjectMapper jsonMapper = createObjectMapper();
 
     public static final String BUCKET_PARAM = "bucket";
     public static final String SCOPE_PARAM = "scope";
@@ -233,6 +237,43 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
         return getFtsIndex(name).isPresent();
     }
 
+    @Override
+    public void importEventingFunctions(String description, String jsonContent) {
+        jsonContent = injectParameters(jsonContent);
+        logger.trace("Import Eventing Functions : \n'{}'", jsonContent);
+
+        EventingFunction[] functions;
+        try {
+            functions = getJsonMapper().readValue(jsonContent, EventingFunction[].class);
+        } catch (JsonProcessingException e) {
+            throw new CouchmoveException(format("Could not read Eventing Functions '%s'", description), e);
+        }
+
+        logger.debug("Import {} Eventing Functions", functions.length);
+        for (int i = 0; i < functions.length; i++) {
+            var function = functions[i];
+            try {
+                cluster.eventingFunctions().upsertFunction(function, withRetry(upsertFunctionOptions()));
+            } catch (CouchbaseException e) {
+                throw new CouchmoveException(format("Could not insert Eventing Function '%s' at position '%s')", description, i), e);
+            }
+        }
+
+    }
+
+    public Optional<EventingFunction> getEventingFunction(String name) {
+        try {
+            return Optional.of(cluster.eventingFunctions().getFunction(name));
+        } catch (EventingFunctionNotFoundException e) {
+            return Optional.empty();
+        }
+    }
+
+    @Override
+    public boolean isEventingFunctionExists(String name) {
+        return getEventingFunction(name).isPresent();
+    }
+
     String injectParameters(String statement) {
         return StrSubstitutor.replace(statement, of(
                 BUCKET_PARAM, getBucketName(),
@@ -311,6 +352,13 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
                 .flatMap(scopeSpec -> scopeSpec.collections().stream())
                 .map(CollectionSpec::name)
                 .forEach(collection -> watchN1qlIndexes(scope, collection, duration));
+    }
+
+    @NotNull
+    private static ObjectMapper createObjectMapper() {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.addMixIn(EventingFunction.class, EventingFunctionMixin.class);
+        return objectMapper;
     }
 
     private static <SELF extends CommonOptions<SELF>> SELF withRetry(SELF options) {
