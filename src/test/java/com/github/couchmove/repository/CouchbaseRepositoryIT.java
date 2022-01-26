@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.github.couchmove.CouchmoveIT.DB_MIGRATION;
+import static com.github.couchmove.utils.FileUtilsTest.SUCCESS_PATH;
 import static com.github.couchmove.utils.TestUtils.getRandomString;
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -246,6 +247,29 @@ public class CouchbaseRepositoryIT extends BaseIT {
         assertThat(changeLog.getVersion()).isEqualTo("1");
         assertThat(changeLog.getDescription()).isEqualTo("insert users");
         assertThat(changeLog.getType()).isEqualTo(Type.N1QL);
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("repositoryParams")
+    public void should_import_eventing_function(String description, CouchbaseRepository<ChangeLog> repository) throws IOException {
+        // Given a fts index json definition file
+        String eventingFunction = IOUtils.toString(FileUtils.getPathFromResource(SUCCESS_PATH + "V3__test.eventing").toUri(), Charset.defaultCharset());
+
+        // When we import it
+        repository.importEventingFunctions(TEST, eventingFunction);
+
+        // Then it should be created
+        assertThat(repository.isEventingFunctionExists(TEST)).isTrue();
+
+//        // Get fts file contents
+//        Map<String, Object> ftsIndexMap = (Map<String, Object>) CouchbaseRepositoryImpl.getJsonMapper().readValue(eventingFunction, Map.class);
+//
+//        // Ensure params is created as specified
+//        SearchIndex searchIndex = ((CouchbaseRepositoryImpl<?>) repository).getFtsIndex(TEST).get();
+//        assertThat(searchIndex.params()).isEqualTo(ftsIndexMap.get("params"));
+
+        // Clean
+        getCluster().eventingFunctions().dropFunction(TEST);
     }
 
 }

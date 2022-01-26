@@ -99,12 +99,12 @@ public class CouchmoveIT extends BaseIT {
         couchmove.migrate();
 
         // Then all changeLogs should be inserted in DB
-        List<ChangeLog> changeLogs = Stream.of("0", "0.1", "1", "2")
+        List<ChangeLog> changeLogs = Stream.of("0", "0.1", "1", "2", "3")
                 .map(version -> PREFIX_ID + version)
                 .map(changeLogRepository::findOne)
                 .collect(Collectors.toList());
 
-        assertEquals(4, changeLogs.size());
+        assertEquals(5, changeLogs.size());
         assertLike(changeLogs.get(0),
                 "0", 1, "create index", N1QL, "V0__create_index.n1ql",
                 "1a417b9f5787e52a46bc65bcd801e8f3f096e63ebcf4b0a17410b16458124af3",
@@ -121,6 +121,11 @@ public class CouchmoveIT extends BaseIT {
         assertLike(changeLogs.get(3),
                 "2", 4, "name", FTS, "V2__name.fts",
                 "6ef9c3cc661804f7f0eb489e678971619a81b5457cff9355e28db9dbf835ea0a",
+                EXECUTED);
+
+        assertLike(changeLogs.get(4),
+                "3", 5, "test", EVENTING, "V3__test.eventing",
+                "d088945774720c9fd625394dca7528dd88eba8a12378ad312117eca3c3f8f645",
                 EXECUTED);
 
         // And successfully executed
@@ -142,6 +147,9 @@ public class CouchmoveIT extends BaseIT {
 
         // FTS index inserted
         assertThat(userRepository.isFtsIndexExists("name")).isTrue();
+
+        // Eventing function created
+        assertThat(userRepository.isEventingFunctionExists("test")).isTrue();
     }
 
     @Test
