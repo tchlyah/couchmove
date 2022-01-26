@@ -16,10 +16,13 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import static com.github.couchmove.pojo.Type.Constants.JSON;
 import static com.github.couchmove.pojo.Type.DESIGN_DOC;
 import static com.github.couchmove.pojo.Type.N1QL;
+import static java.nio.file.Files.newDirectoryStream;
 
 /**
  * Service for fetching {@link ChangeLog}s from resource folder
@@ -50,24 +53,27 @@ public class ChangeLogFileService {
      */
     public List<ChangeLog> fetch() throws IOException {
         logger.info("Reading from migration folder '{}'", changePath);
-        SortedSet<ChangeLog> sortedChangeLogs = new TreeSet<>();
-        Files.newDirectoryStream(changePath).forEach(path -> {
-            String fileName = path.getFileName().toString();
-            Matcher matcher = fileNamePattern.matcher(fileName);
-            if (matcher.matches()) {
-                ChangeLog changeLog = ChangeLog.builder()
-                        .version(matcher.group(1))
-                        .script(fileName)
-                        .description(matcher.group(2).replace("_", " "))
-                        .type(getChangeLogType(path))
-                        .checksum(FileUtils.calculateChecksum(path, DESIGN_DOC.getExtension(), N1QL.getExtension()))
-                        .build();
-                logger.debug("Fetched one : {}", changeLog);
-                sortedChangeLogs.add(changeLog);
-            }
-        });
-        logger.info("Fetched {} change logs from migration folder", sortedChangeLogs.size());
-        return Collections.unmodifiableList(new ArrayList<>(sortedChangeLogs));
+        List<ChangeLog> changelogs = StreamSupport.stream(newDirectoryStream(changePath).spliterator(), false)
+                .map(path -> {
+                    String fileName = path.getFileName().toString();
+                    Matcher matcher = fileNamePattern.matcher(fileName);
+                    if (!matcher.matches()) {
+                        return null;
+                    }
+                    return ChangeLog.builder()
+                            .version(matcher.group(1))
+                            .script(fileName)
+                            .description(matcher.group(2).replace("_", " "))
+                            .type(getChangeLogType(path))
+                            .checksum(FileUtils.calculateChecksum(path, DESIGN_DOC.getExtension(), N1QL.getExtension()))
+                            .build();
+                })
+                .filter(Objects::nonNull)
+                .peek(changelog -> logger.debug("Fetched one : {}", changelog))
+                .sorted()
+                .collect(Collectors.toList());
+        logger.info("Fetched {} change logs from migration folder", changelogs.size());
+        return Collections.unmodifiableList(changelogs);
     }
 
     /**
@@ -119,7 +125,7 @@ public class ChangeLogFileService {
      * @return {@link Type} of the {@link ChangeLog} file
      */
     @NotNull
-    static Type getChangeLogType(Path path) {
+    public static Type getChangeLogType(Path path) {
         if (Files.isDirectory(path)) {
             return Type.DOCUMENTS;
         }
