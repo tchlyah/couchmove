@@ -4,6 +4,7 @@ import com.couchbase.client.java.Bucket;
 import com.github.couchmove.exception.CouchmoveException;
 import com.github.couchmove.pojo.ChangeLog;
 import com.github.couchmove.service.*;
+import org.assertj.core.api.Assertions;
 import org.junit.Assert;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -19,6 +20,7 @@ import static com.github.couchmove.utils.TestUtils.RANDOM;
 import static com.github.couchmove.utils.TestUtils.getRandomChangeLog;
 import static com.google.common.collect.Lists.newArrayList;
 import static java.util.Collections.emptyList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
@@ -104,7 +106,7 @@ public class CouchmoveTest {
                 .build();
         couchmove.executeMigration(newArrayList(changeLogToSkip, executedChangeLog));
         verify(dbServiceMock).save(changeLogToSkip);
-        Assert.assertEquals(SKIPPED, changeLogToSkip.getStatus());
+        assertThat(changeLogToSkip.getStatus()).isEqualTo(SKIPPED);
     }
 
     @Test
@@ -124,7 +126,7 @@ public class CouchmoveTest {
                 .build();
         doNothing().when(couchmove).doExecute(changeLog);
         couchmove.executeMigration(newArrayList(executedChangeLog, changeLog));
-        Assert.assertEquals((Integer) 2, changeLog.getOrder());
+        assertThat(changeLog.getOrder()).isEqualTo((Integer) 2);
     }
 
     @Test
@@ -147,10 +149,10 @@ public class CouchmoveTest {
                 .build();
         couchmove.executeMigration(changeLog, 1);
         verify(dbServiceMock).save(changeLog);
-        Assert.assertNotNull(changeLog.getTimestamp());
-        Assert.assertNotNull(changeLog.getDuration());
-        Assert.assertNotNull(changeLog.getRunner());
-        Assert.assertEquals(EXECUTED, changeLog.getStatus());
+        assertThat(changeLog.getTimestamp()).isNotNull();
+        assertThat(changeLog.getDuration()).isNotNull();
+        assertThat(changeLog.getRunner()).isNotNull();
+        assertThat(changeLog.getStatus()).isEqualTo(EXECUTED);
     }
 
     @Test
@@ -163,10 +165,10 @@ public class CouchmoveTest {
         doThrow(CouchmoveException.class).when(dbServiceMock).importDocuments(any());
         assertThrows(CouchmoveException.class, () -> couchmove.executeMigration(changeLog, 1));
         verify(dbServiceMock).save(changeLog);
-        Assert.assertNotNull(changeLog.getTimestamp());
-        Assert.assertNotNull(changeLog.getDuration());
-        Assert.assertNotNull(changeLog.getRunner());
-        Assert.assertEquals(FAILED, changeLog.getStatus());
+        assertThat(changeLog.getTimestamp()).isNotNull();
+        assertThat(changeLog.getDuration()).isNotNull();
+        assertThat(changeLog.getRunner()).isNotNull();
+        assertThat(changeLog.getStatus()).isEqualTo(FAILED);
     }
 
     @Test
@@ -177,8 +179,8 @@ public class CouchmoveTest {
                 .status(FAILED).build();
         doNothing().when(couchmove).doExecute(changeLog);
         couchmove.executeMigration(newArrayList(changeLog));
-        Assert.assertEquals((Integer) 1, changeLog.getOrder());
-        Assert.assertEquals(EXECUTED, changeLog.getStatus());
+        assertThat(changeLog.getOrder()).isEqualTo((Integer) 1);
+        assertThat(changeLog.getStatus()).isEqualTo(EXECUTED);
     }
 
     private static Bucket mockBucket() {

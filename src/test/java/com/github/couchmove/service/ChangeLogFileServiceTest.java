@@ -45,16 +45,16 @@ public class ChangeLogFileServiceTest {
     @Test
     public void should_get_right_type_from_file() {
         // For folder
-        Assert.assertEquals(Type.DOCUMENTS, ChangeLogFileService.getChangeLogType(FileUtils.getTempDirectory().toPath()));
+        assertThat(ChangeLogFileService.getChangeLogType(FileUtils.getTempDirectory().toPath())).isEqualTo(Type.DOCUMENTS);
         // For JSON file
-        Assert.assertEquals(Type.DESIGN_DOC, ChangeLogFileService.getChangeLogType(Paths.get("toto.json")));
-        Assert.assertEquals(Type.DESIGN_DOC, ChangeLogFileService.getChangeLogType(Paths.get("toto.JSON")));
+        assertThat(ChangeLogFileService.getChangeLogType(Paths.get("toto.json"))).isEqualTo(Type.DESIGN_DOC);
+        assertThat(ChangeLogFileService.getChangeLogType(Paths.get("toto.JSON"))).isEqualTo(Type.DESIGN_DOC);
         // For N1QL files
-        Assert.assertEquals(Type.N1QL, ChangeLogFileService.getChangeLogType(Paths.get("toto.n1ql")));
-        Assert.assertEquals(Type.N1QL, ChangeLogFileService.getChangeLogType(Paths.get("toto.N1QL")));
+        assertThat(ChangeLogFileService.getChangeLogType(Paths.get("toto.n1ql"))).isEqualTo(Type.N1QL);
+        assertThat(ChangeLogFileService.getChangeLogType(Paths.get("toto.N1QL"))).isEqualTo(Type.N1QL);
         // For FTS files
-        Assert.assertEquals(Type.FTS, ChangeLogFileService.getChangeLogType(Paths.get("toto.fts")));
-        Assert.assertEquals(Type.FTS, ChangeLogFileService.getChangeLogType(Paths.get("toto.FtS")));
+        assertThat(ChangeLogFileService.getChangeLogType(Paths.get("toto.fts"))).isEqualTo(Type.FTS);
+        assertThat(ChangeLogFileService.getChangeLogType(Paths.get("toto.FtS"))).isEqualTo(Type.FTS);
     }
 
     @Test
@@ -94,7 +94,7 @@ public class ChangeLogFileServiceTest {
                                 .checksum("6ef9c3cc661804f7f0eb489e678971619a81b5457cff9355e28db9dbf835ea0a")
                                 .build())
                 .collect(Collectors.toList());
-        Assert.assertEquals(changeLogs, new ChangeLogFileService("db/migration/success").fetch());
+        assertThat(new ChangeLogFileService("db/migration/success").fetch()).isEqualTo(changeLogs);
     }
 
     @Test

@@ -3,7 +3,6 @@ package com.github.couchmove.utils;
 import com.github.couchmove.pojo.Document;
 import com.google.common.io.Files;
 import lombok.var;
-import org.junit.Assert;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -34,19 +33,19 @@ public class FileUtilsTest {
     @Test
     public void should_get_file_path_from_resource() throws Exception {
         Path path = FileUtils.getPathFromResource(SUCCESS_PATH + "V1__user.json");
-        Assert.assertNotNull(path);
+        assertThat(path).isNotNull();
         File file = path.toFile();
-        Assert.assertTrue(file.exists());
-        Assert.assertTrue(file.isFile());
+        assertThat(file.exists()).isTrue();
+        assertThat(file.isFile()).isTrue();
     }
 
     @Test
     public void should_get_folder_path_from_resource() throws Exception {
         Path path = FileUtils.getPathFromResource(DB_MIGRATION_PATH);
-        Assert.assertNotNull(path);
+        assertThat(path).isNotNull();
         File file = path.toFile();
-        Assert.assertTrue(file.exists());
-        Assert.assertTrue(file.isDirectory());
+        assertThat(file.exists()).isTrue();
+        assertThat(file.isDirectory()).isTrue();
     }
 
     private static Stream<Arguments> fileSource() {
@@ -61,7 +60,7 @@ public class FileUtilsTest {
     @ParameterizedTest
     @MethodSource("fileSource")
     public void should_calculate_checksum_of_file_or_folder(String path, String expectedChecksum) throws Exception {
-        Assert.assertEquals(path, expectedChecksum, FileUtils.calculateChecksum(FileUtils.getPathFromResource(path), DESIGN_DOC.getExtension(), N1QL.getExtension()));
+        assertThat(FileUtils.calculateChecksum(FileUtils.getPathFromResource(path), DESIGN_DOC.getExtension(), N1QL.getExtension())).as(path).isEqualTo(expectedChecksum);
     }
 
     @Test

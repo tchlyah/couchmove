@@ -20,6 +20,7 @@ import static com.github.couchmove.pojo.Status.FAILED;
 import static com.github.couchmove.service.ChangeLogDBService.PREFIX_ID;
 import static com.github.couchmove.service.ChangeLogDBService.extractRequests;
 import static com.github.couchmove.utils.TestUtils.*;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
@@ -52,7 +53,7 @@ public class ChangeLogDBServiceTest {
         List<ChangeLog> result = service.fetchAndCompare(changeLogs);
 
         // Then we should return the same
-        Assert.assertEquals(changeLogs, result);
+        assertThat(result).isEqualTo(changeLogs);
     }
 
     @Test
@@ -70,9 +71,9 @@ public class ChangeLogDBServiceTest {
         List<ChangeLog> result = service.fetchAndCompare(changeLogs);
 
         // Then nothing should be returned
-        Assert.assertEquals(changeLogs, result);
-        Assert.assertNotNull(changeLogs.get(0).getCas());
-        Assert.assertNotNull(changeLogs.get(1).getCas());
+        assertThat(result).isEqualTo(changeLogs);
+        assertThat(changeLogs.get(0).getCas()).isNotNull();
+        assertThat(changeLogs.get(1).getCas()).isNotNull();
     }
 
     @Test
@@ -108,8 +109,8 @@ public class ChangeLogDBServiceTest {
         List<ChangeLog> result = service.fetchAndCompare(changeLogs);
 
         // Then it should be same
-        Assert.assertEquals(changeLogs, result);
-        Assert.assertNull(changeLog.getCas());
+        assertThat(result).isEqualTo(changeLogs);
+        assertThat(changeLog.getCas()).isNull();
     }
 
     @Test
@@ -130,15 +131,15 @@ public class ChangeLogDBServiceTest {
         List<ChangeLog> results = service.fetchAndCompare(Lists.newArrayList(changeLog));
 
         // Then it should be returned with status reset
-        Assertions.assertThat(results).hasSize(1);
+        assertThat(results).hasSize(1);
         ChangeLog result = results.get(0);
-        Assert.assertNull("status", result.getStatus());
-        Assert.assertNotNull("cas", result.getCas());
-        Assert.assertEquals("description", dbChangeLog.getDescription(), result.getDescription());
-        Assert.assertEquals("version", dbChangeLog.getVersion(), result.getVersion());
-        Assert.assertEquals("type", dbChangeLog.getType(), result.getType());
-        Assert.assertEquals("script", dbChangeLog.getScript(), result.getScript());
-        Assert.assertEquals("checksum", newChecksum, result.getChecksum());
+        assertThat(result.getStatus()).as("status").isNull();
+        assertThat(result.getCas()).as("cas").isNotNull();
+        assertThat(result.getDescription()).as("description").isEqualTo(dbChangeLog.getDescription());
+        assertThat(result.getVersion()).as( "version").isEqualTo(dbChangeLog.getVersion());
+        assertThat(result.getType()).as("type").isEqualTo(dbChangeLog.getType());
+        assertThat(result.getScript()).as("script").isEqualTo( dbChangeLog.getScript());
+        assertThat(newChecksum).as("checksum").isEqualTo(result.getChecksum());
     }
 
     @Test
@@ -159,8 +160,8 @@ public class ChangeLogDBServiceTest {
         List<ChangeLog> result = service.fetchAndCompare(changeLogs);
 
         // Then it should be same
-        Assert.assertEquals(changeLogs, result);
-        Assert.assertNull(changeLog.getCas());
+        assertThat(result).isEqualTo(changeLogs);
+        assertThat(changeLog.getCas()).isNull();
     }
 
     @Test
@@ -174,6 +175,6 @@ public class ChangeLogDBServiceTest {
                 "/*insert new users*/\n" +
                 request2 + "; ";
 
-        Assertions.assertThat(extractRequests(sql)).containsExactly(request1, request2);
+        assertThat(extractRequests(sql)).containsExactly(request1, request2);
     }
 }
