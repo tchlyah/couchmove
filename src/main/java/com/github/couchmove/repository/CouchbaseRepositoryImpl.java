@@ -77,8 +77,34 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
     public CouchbaseRepositoryImpl(Cluster cluster, Collection collection, Class<E> entityClass) {
         this.cluster = cluster;
         this.bucket = cluster.bucket(collection.bucketName());
-        this.collection = collection;
+        this.collection = getOrCreate(collection);
         this.entityClass = entityClass;
+    }
+
+    private Collection getOrCreate(Collection collection) {
+        String scopeName = collection.scopeName();
+        String collectionName = collection.name();
+
+        CollectionManager collections = this.bucket.collections();
+
+        Optional<ScopeSpec> scope = collections
+                .getAllScopes(withRetry(getAllScopesOptions())).stream()
+                .filter(s -> s.name().equals(scopeName))
+                .findFirst();
+        Optional<CollectionSpec> collectionSpec = Optional.empty();
+        if (!scope.isPresent()) {
+            collections.createScope(scopeName, withRetry(createScopeOptions()));
+        } else {
+            ScopeSpec scopeSpec = scope.get();
+            collectionSpec = scopeSpec.collections().stream()
+                    .filter(c -> c.name().equals(collectionName))
+                    .findFirst();
+        }
+        if (!collectionSpec.isPresent()) {
+            collections.createCollection(CollectionSpec.create(collectionName, scopeName), withRetry(createCollectionOptions()));
+        }
+
+        return collection;
     }
 
     public CouchbaseRepositoryImpl(Cluster cluster, Bucket bucket, Class<E> entityClass) {

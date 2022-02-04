@@ -38,12 +38,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class CouchmoveIT extends BaseIT {
 
     public static final String DB_MIGRATION = "db/migration/";
-    public static final String COUCHMOVE_SCOPE = "couchmove";
     public static final String CHANGELOG_COLLECTION = "changelog";
     public static final String TEST_SCOPE = "test";
     public static final String COLLECTION_1 = "collection1";
     public static final String COLLECTION_2 = "collection2";
     public static final String PRIMARY_INDEX = "#primary";
+    public static final String CHANGELOG_SCOPE = "couchmove";
 
     private static CouchbaseRepository<ChangeLog> changeLogRepository;
 
@@ -404,19 +404,27 @@ public class CouchmoveIT extends BaseIT {
     @Test
     public void should_insert_changelogs_into_collection() {
         // Given a new scope/collection
-        CollectionManager collections = getBucket().collections();
-        collections.createScope(COUCHMOVE_SCOPE);
-        collections.createCollection(CollectionSpec.create(CHANGELOG_COLLECTION, COUCHMOVE_SCOPE));
-        Collection collection = getBucket().scope(COUCHMOVE_SCOPE).collection(CHANGELOG_COLLECTION);
+        Collection collection = getBucket().scope(CHANGELOG_SCOPE).collection(CHANGELOG_COLLECTION);
 
         // And a Couchmove instance configured with this collection
         var couchmove = new Couchmove(collection, getCluster(), DB_MIGRATION + "collections");
+
+        // Couchmove should create scope and collection
+        assertThat(
+                getBucket().collections().getAllScopes().stream()
+                        .filter(scopeSpec -> scopeSpec.name().equals(CHANGELOG_SCOPE))
+                        .map(ScopeSpec::collections)
+                        .flatMap(java.util.Collection::stream)
+                        .map(CollectionSpec::name)
+                        .filter(CHANGELOG_COLLECTION::equals)
+                        .findFirst())
+                .isPresent();
 
         // When we launch migration
         couchmove.migrate();
 
         // Then all changeLogs should be inserted in the same collection
-        var collectionChangeLogRepository = changeLogRepository.withCollection(COUCHMOVE_SCOPE, CHANGELOG_COLLECTION);
+        var collectionChangeLogRepository = changeLogRepository.withCollection(CHANGELOG_SCOPE, CHANGELOG_COLLECTION);
         List<ChangeLog> changeLogs = Stream.of("0", "0.1")
                 .map(version -> PREFIX_ID + version)
                 .map(collectionChangeLogRepository::findOne)
