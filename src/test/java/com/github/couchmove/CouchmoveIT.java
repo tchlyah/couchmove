@@ -1,10 +1,9 @@
 package com.github.couchmove;
 
-import com.couchbase.client.core.error.ScopeNotFoundException;
+import com.couchbase.client.core.error.IndexNotFoundException;
 import com.couchbase.client.java.Collection;
-import com.couchbase.client.java.manager.collection.CollectionManager;
-import com.couchbase.client.java.manager.collection.CollectionSpec;
-import com.couchbase.client.java.manager.query.QueryIndex;
+import com.couchbase.client.java.manager.collection.*;
+import com.couchbase.client.java.manager.query.*;
 import com.couchbase.client.java.manager.view.DesignDocument;
 import com.couchbase.client.java.view.DesignDocumentNamespace;
 import com.github.couchmove.exception.CouchmoveException;
@@ -22,8 +21,11 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.couchbase.client.java.manager.query.DropQueryIndexOptions.dropQueryIndexOptions;
+import static com.couchbase.client.java.manager.query.GetAllQueryIndexesOptions.getAllQueryIndexesOptions;
 import static com.github.couchmove.pojo.Status.*;
 import static com.github.couchmove.pojo.Type.*;
+import static com.github.couchmove.repository.CouchbaseRepositoryImpl.DEFAULT;
 import static com.github.couchmove.service.ChangeLogDBService.PREFIX_ID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.*;
@@ -37,8 +39,11 @@ public class CouchmoveIT extends BaseIT {
 
     public static final String DB_MIGRATION = "db/migration/";
     public static final String COUCHMOVE_SCOPE = "couchmove";
-    public static final String COLLECTION = "changelog";
+    public static final String CHANGELOG_COLLECTION = "changelog";
     public static final String TEST_SCOPE = "test";
+    public static final String COLLECTION_1 = "collection1";
+    public static final String COLLECTION_2 = "collection2";
+    public static final String PRIMARY_INDEX = "#primary";
 
     private static CouchbaseRepository<ChangeLog> changeLogRepository;
 
@@ -55,13 +60,34 @@ public class CouchmoveIT extends BaseIT {
 
     @AfterEach
     public void clean() {
+        String bucket = getBucket().name();
         CollectionManager collections = getBucket().collections();
-        try {
-            collections.dropScope(TEST_SCOPE);
-            collections.dropScope(COUCHMOVE_SCOPE);
-        } catch (ScopeNotFoundException e) {
-            // Ignore if scopes doesn't exist
-        }
+        List<ScopeSpec> scopes = collections.getAllScopes();
+
+        // Drop indexes
+        QueryIndexManager queryIndexManager = getCluster().queryIndexes();
+        scopes.stream()
+                .map(ScopeSpec::collections)
+                .flatMap(java.util.Collection::stream)
+                .map(collection -> queryIndexManager.getAllIndexes(bucket, getAllQueryIndexesOptions().scopeName(collection.scopeName()).collectionName(collection.name())))
+                .flatMap(java.util.Collection::stream)
+                .filter(index -> !index.name().equals(PRIMARY_INDEX))
+                .forEach(index -> {
+                    try {
+                        queryIndexManager.dropIndex(bucket, index.name(),
+                                index.collectionName().isPresent() && index.scopeName().isPresent() ?
+                                        dropQueryIndexOptions().collectionName(index.collectionName().get()).scopeName(index.scopeName().get()) :
+                                        dropQueryIndexOptions());
+                    } catch (IndexNotFoundException e) {
+                        // Ignore if index not found
+                    }
+                });
+
+        // Drop scopes
+        scopes.stream()
+                .map(ScopeSpec::name)
+                .filter(scope -> !DEFAULT.equals(scope))
+                .forEach(collections::dropScope);
     }
 
     @Test
@@ -205,7 +231,7 @@ public class CouchmoveIT extends BaseIT {
     }
 
     @Test
-    public void should_build_deferred_indexes() {
+    public void should_build_deferred_indexes() throws InterruptedException {
         // Given a Couchmove instance configured for success migration folder
         Couchmove couchmove = getCouchmove("multiple-deferred-indexes");
 
@@ -228,24 +254,119 @@ public class CouchmoveIT extends BaseIT {
                 "77492051f8633e40032881e474207d97d87c3eb1e239a832b1ad11b22c933fe6",
                 EXECUTED);
 
+        // Index inserted in deferred state
+        checkIndexStatus("buyer_index", DEFAULT, DEFAULT, "deferred");
+        checkIndexStatus("merchant_index", DEFAULT, DEFAULT, "deferred");
+
         // Trigger deferred index build
         couchmove.buildN1qlDeferredIndexes();
 
+        Thread.sleep(2000);
+
+        // Index inserted in building state
+        checkIndexStatus("buyer_index", DEFAULT, DEFAULT, "building");
+        checkIndexStatus("merchant_index", DEFAULT, DEFAULT, "building");
+
         // Wait for indexes to be built
-        couchmove.waitForN1qlIndexes(Duration.ofSeconds(5));
+        couchmove.waitForN1qlIndexes(Duration.ofSeconds(30));
 
-        // Index inserted
-        Optional<QueryIndex> userIndexInfo = getCluster().queryIndexes().getAllIndexes(getBucket().name()).stream()
-                .filter(i -> i.name().equals("buyer_index"))
-                .findFirst();
-        assertTrue(userIndexInfo.isPresent());
-        assertEquals("`username`", userIndexInfo.get().indexKey().get(0));
+        // Index online
+        checkIndexStatus("buyer_index", DEFAULT, DEFAULT, "online");
+        checkIndexStatus("merchant_index", DEFAULT, DEFAULT, "online");
+    }
 
-        userIndexInfo = getCluster().queryIndexes().getAllIndexes(getBucket().name()).stream()
-                .filter(i -> i.name().equals("merchant_index"))
+    @Test
+    public void should_build_scope_deferred_indexes() throws InterruptedException {
+        should_create_scope_deferred_indexes();
+
+        Couchmove couchmove = getCouchmove("collections-deferred-indexes");
+
+        // Trigger deferred index build on scope
+        couchmove.buildN1qlDeferredIndexes(TEST_SCOPE);
+
+        Thread.sleep(2000);
+
+        // Index building
+        checkIndexStatus("collection1_index", TEST_SCOPE, COLLECTION_1, "building");
+        checkIndexStatus("collection2_index", TEST_SCOPE, COLLECTION_2, "building");
+
+        // Wait for indexes to be built
+        couchmove.waitForN1qlIndexes(TEST_SCOPE, Duration.ofSeconds(30));
+
+        // Index online
+        checkIndexStatus("collection1_index", TEST_SCOPE, COLLECTION_1, "online");
+        checkIndexStatus("collection2_index", TEST_SCOPE, COLLECTION_2, "online");
+    }
+
+    @Test
+    public void should_build_collection_deferred_indexes() throws InterruptedException {
+        should_create_scope_deferred_indexes();
+
+        Couchmove couchmove = getCouchmove("collections-deferred-indexes");
+
+        // Trigger deferred index build on scope
+        couchmove.buildN1qlDeferredIndexes(TEST_SCOPE, COLLECTION_1);
+
+        Thread.sleep(2000);
+
+        // Index building
+        checkIndexStatus("collection1_index", TEST_SCOPE, COLLECTION_1, "building");
+        checkIndexStatus("collection2_index", TEST_SCOPE, COLLECTION_2, "deferred");
+
+        // Wait for indexes to be built
+        couchmove.waitForN1qlIndexes(TEST_SCOPE, COLLECTION_1, Duration.ofSeconds(30));
+
+        // Index online
+        checkIndexStatus("collection1_index", TEST_SCOPE, COLLECTION_1, "online");
+        checkIndexStatus("collection2_index", TEST_SCOPE, COLLECTION_2, "deferred");
+    }
+
+    private void should_create_scope_deferred_indexes() throws InterruptedException {
+        // Given a Couchmove instance configured for success migration folder
+        Couchmove couchmove = getCouchmove("collections-deferred-indexes");
+
+        // When we launch migration
+        couchmove.migrate();
+
+        // Then all changeLogs should be inserted in DB
+        List<ChangeLog> changeLogs = Stream.of("0", "1")
+                .map(version -> PREFIX_ID + version)
+                .map(changeLogRepository::findOne)
+                .collect(Collectors.toList());
+
+        assertEquals(2, changeLogs.size());
+        assertLike(changeLogs.get(0),
+                "0", 1, "create scope and collections", N1QL, "V0__create_scope_and_collections.n1ql",
+                "14f8b6c4d9bbe6e990601c99b12079196d7b774489462b6228217cca48e9ba89",
+                EXECUTED);
+        assertLike(changeLogs.get(1),
+                "1", 2, "create deferred indexes", N1QL, "V1__create_deferred_indexes.n1ql",
+                "7320691fae304772dcf4186c8f4bafa9005066bb5908d7a18083a1d6191cdac3",
+                EXECUTED);
+
+        // Index inserted in deferred state
+        checkIndexStatus("collection1_index", TEST_SCOPE, COLLECTION_1, "deferred");
+        checkIndexStatus("collection2_index", TEST_SCOPE, COLLECTION_2, "deferred");
+    }
+
+    private void checkIndexStatus(String name, String scope, String collection, String status) {
+        GetAllQueryIndexesOptions options = getAllQueryIndexesOptions();
+        if (!scope.equals(DEFAULT) || !collection.equals(DEFAULT)) {
+            options = options.scopeName(scope).collectionName(collection);
+        }
+        Optional<QueryIndex> indexInfo = getCluster().queryIndexes().getAllIndexes(getBucket().name(), options).stream()
+                .filter(i -> i.name().equals(name))
                 .findFirst();
-        assertTrue(userIndexInfo.isPresent());
-        assertEquals("`username`", userIndexInfo.get().indexKey().get(0));
+        assertThat(indexInfo)
+                .isPresent()
+                .get()
+                .satisfies(index -> {
+                    if (!scope.equals(DEFAULT) || !collection.equals(DEFAULT)) {
+                        assertThat(index.scopeName()).isPresent().get().isEqualTo(scope);
+                        assertThat(index.collectionName()).isPresent().get().isEqualTo(collection);
+                    }
+                    assertThat(index.state()).isEqualTo(status);
+                });
     }
 
     @Test
@@ -285,8 +406,8 @@ public class CouchmoveIT extends BaseIT {
         // Given a new scope/collection
         CollectionManager collections = getBucket().collections();
         collections.createScope(COUCHMOVE_SCOPE);
-        collections.createCollection(CollectionSpec.create(COLLECTION, COUCHMOVE_SCOPE));
-        Collection collection = getBucket().scope(COUCHMOVE_SCOPE).collection(COLLECTION);
+        collections.createCollection(CollectionSpec.create(CHANGELOG_COLLECTION, COUCHMOVE_SCOPE));
+        Collection collection = getBucket().scope(COUCHMOVE_SCOPE).collection(CHANGELOG_COLLECTION);
 
         // And a Couchmove instance configured with this collection
         var couchmove = new Couchmove(collection, getCluster(), DB_MIGRATION + "collections");
@@ -295,7 +416,7 @@ public class CouchmoveIT extends BaseIT {
         couchmove.migrate();
 
         // Then all changeLogs should be inserted in the same collection
-        var collectionChangeLogRepository = changeLogRepository.withCollection(COUCHMOVE_SCOPE, COLLECTION);
+        var collectionChangeLogRepository = changeLogRepository.withCollection(COUCHMOVE_SCOPE, CHANGELOG_COLLECTION);
         List<ChangeLog> changeLogs = Stream.of("0", "0.1")
                 .map(version -> PREFIX_ID + version)
                 .map(collectionChangeLogRepository::findOne)

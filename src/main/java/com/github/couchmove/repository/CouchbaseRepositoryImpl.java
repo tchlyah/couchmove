@@ -12,6 +12,8 @@ import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.*;
 import com.couchbase.client.java.codec.RawJsonTranscoder;
 import com.couchbase.client.java.kv.*;
+import com.couchbase.client.java.manager.collection.*;
+import com.couchbase.client.java.manager.query.BuildQueryIndexOptions;
 import com.couchbase.client.java.manager.query.QueryIndex;
 import com.couchbase.client.java.manager.search.SearchIndex;
 import com.couchbase.client.java.manager.view.DesignDocument;
@@ -34,6 +36,12 @@ import java.util.stream.Collectors;
 
 import static com.couchbase.client.java.kv.InsertOptions.insertOptions;
 import static com.couchbase.client.java.kv.ReplaceOptions.replaceOptions;
+import static com.couchbase.client.java.manager.collection.CreateCollectionOptions.createCollectionOptions;
+import static com.couchbase.client.java.manager.collection.CreateScopeOptions.createScopeOptions;
+import static com.couchbase.client.java.manager.collection.GetAllScopesOptions.getAllScopesOptions;
+import static com.couchbase.client.java.manager.query.BuildQueryIndexOptions.buildDeferredQueryIndexesOptions;
+import static com.couchbase.client.java.manager.query.GetAllQueryIndexesOptions.getAllQueryIndexesOptions;
+import static com.couchbase.client.java.manager.query.WatchQueryIndexesOptions.watchQueryIndexesOptions;
 import static com.couchbase.client.java.manager.search.UpsertSearchIndexOptions.upsertSearchIndexOptions;
 import static com.google.common.collect.ImmutableMap.of;
 import static lombok.AccessLevel.PACKAGE;
@@ -56,6 +64,7 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
 
     public static final String BUCKET_PARAM = "bucket";
     public static final int MAX_ATTEMPTS = 5;
+    public static final String DEFAULT = "_default";
 
     private final Bucket bucket;
 
@@ -161,7 +170,7 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
         logger.debug("Execute n1ql request : \n{}", parametrizedStatement);
         try {
             retry(() -> cluster.query(parametrizedStatement, withRetry(QueryOptions.queryOptions().scanConsistency(QueryScanConsistency.REQUEST_PLUS))),
-                    "12021");
+                    "12003", "12021");
         } catch (Exception e) {
             throw new CouchmoveException("Unable to execute n1ql request", e);
         }
@@ -173,7 +182,7 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
         logger.trace("Import FTS index : \n'{}'", jsonContent);
         try {
             CustomSearchIndex searchIndex = getJsonMapper().readValue(jsonContent, CustomSearchIndex.class);
-            cluster.searchIndexes().upsertIndex(searchIndex, withRetry(upsertSearchIndexOptions()));
+            retry(() -> cluster.searchIndexes().upsertIndex(searchIndex, withRetry(upsertSearchIndexOptions())), "doesn't belong to scope");
         } catch (CouchbaseException | JsonProcessingException e) {
             throw new CouchmoveException("Could not store FTS index '" + name + "'", e);
         }
@@ -203,26 +212,76 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
 
     @Override
     public void buildN1qlDeferredIndexes() {
-        cluster.queryIndexes().buildDeferredIndexes(getBucketName());
+        logger.info("Build N1QL Deferred Indexes for default");
+        buildN1qlDeferredIndexes(collection.scopeName(), collection.name());
+    }
+
+    @Override
+    public void buildN1qlDeferredIndexes(String scope, String collection) {
+        BuildQueryIndexOptions buildQueryIndexOptions = withRetry(buildDeferredQueryIndexesOptions());
+        if (!DEFAULT.equals(scope) || !DEFAULT.equals(collection)) {
+            buildQueryIndexOptions = buildQueryIndexOptions.scopeName(scope).collectionName(collection);
+        }
+        try {
+            cluster.queryIndexes().buildDeferredIndexes(getBucketName(), buildQueryIndexOptions);
+        } catch (CouchbaseException e) {
+            if (e.getMessage().contains("building in the background")) {
+                logger.warn("Build Index failed, will retry building in the background");
+            } else {
+                throw e;
+            }
+        }
+    }
+
+    @Override
+    public void buildN1qlDeferredIndexes(String scope) {
+        logger.info("Build N1QL Deferred Indexes for scope '{}'", scope);
+        bucket.collections().getAllScopes(withRetry(getAllScopesOptions())).stream()
+                .filter(scopeSpec -> scopeSpec.name().equals(scope))
+                .flatMap(scopeSpec -> scopeSpec.collections().stream())
+                .map(CollectionSpec::name)
+                .forEach(collection -> buildN1qlDeferredIndexes(scope, collection));
     }
 
     @Override
     public void watchN1qlIndexes(Duration duration) {
-        List<String> indexes = cluster.queryIndexes().getAllIndexes(getBucketName()).stream()
+        logger.info("Waiting for {} for N1QL indexes to be ready", duration.toString().replace("PT", ""));
+        watchN1qlIndexes(collection.scopeName(), collection.name(), duration);
+    }
+
+    @Override
+    public void watchN1qlIndexes(String scope, String collection, Duration duration) {
+        var getAllIndexesOptions = withRetry(getAllQueryIndexesOptions());
+        var watchQueryIndexesOptions = watchQueryIndexesOptions();
+        if (!DEFAULT.equals(collection) || !DEFAULT.equals(scope)) {
+            getAllIndexesOptions = getAllIndexesOptions.scopeName(scope).collectionName(collection);
+            watchQueryIndexesOptions = watchQueryIndexesOptions.scopeName(scope).collectionName(collection);
+        }
+        List<String> indexes = cluster.queryIndexes().getAllIndexes(getBucketName(), getAllIndexesOptions).stream()
                 .map(QueryIndex::name)
                 .collect(Collectors.toList());
-        cluster.queryIndexes().watchIndexes(getBucketName(), indexes, duration);
+        cluster.queryIndexes().watchIndexes(getBucketName(), indexes, duration, watchQueryIndexesOptions);
+    }
+
+    @Override
+    public void watchN1qlIndexes(String scope, Duration duration) {
+        logger.info("Waiting for {} for N1QL indexes in scope {} to be ready", duration.toString().replace("PT", ""), scope);
+        bucket.collections().getAllScopes(withRetry(getAllScopesOptions())).stream()
+                .filter(scopeSpec -> scopeSpec.name().equals(scope))
+                .flatMap(scopeSpec -> scopeSpec.collections().stream())
+                .map(CollectionSpec::name)
+                .forEach(collection -> watchN1qlIndexes(scope, collection, duration));
     }
 
     private static <SELF extends CommonOptions<SELF>> SELF withRetry(SELF options) {
         return options.retryStrategy(BestEffortRetryStrategy.INSTANCE);
     }
 
-    private static void retry(Runnable runnable, String errorContains) {
+    private static void retry(Runnable runnable, String... errorContains) {
         Mono
                 .defer(() -> Mono.fromRunnable(runnable))
                 .retryWhen(Retry.backoff(MAX_ATTEMPTS, Duration.ofMillis(500))
-                        .filter(t -> t.getMessage().contains(errorContains))
+                        .filter(t -> Arrays.stream(errorContains).anyMatch(e -> t.getMessage().contains(e)))
                         .doBeforeRetry(retrySignal ->
                                 logger.debug("Error while executing request, retrying {}/{}", retrySignal.totalRetries(), MAX_ATTEMPTS)))
                 .block();

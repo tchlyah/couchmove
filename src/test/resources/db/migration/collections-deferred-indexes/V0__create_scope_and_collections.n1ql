@@ -1,0 +1,4 @@
+CREATE SCOPE `${bucket}`.`test`;
+
+CREATE COLLECTION `${bucket}`.`test`.`collection1`;
+CREATE COLLECTION `${bucket}`.`test`.`collection2`;

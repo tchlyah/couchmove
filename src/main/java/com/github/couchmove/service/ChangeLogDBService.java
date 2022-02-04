@@ -165,10 +165,38 @@ public class ChangeLogDBService {
     }
 
     /**
+     * Watches all indexes, polling the query service until they become
+     * "online" or the timeout has expired
+     *
+     * @param scope scope name.
+     * @param duration the maximum duration for which to poll for the index to become online.
+     */
+    public void waitForN1qlIndexes(String scope, Duration duration) {
+        repository.watchN1qlIndexes(scope, duration);
+    }
+
+    public void watchN1qlIndexes(String scope, String collection, Duration duration) {
+        repository.watchN1qlIndexes(scope, collection, duration);
+    }
+
+    /**
      * Instruct the query engine to trigger the build of indexes that have been deferred, within the default management
      */
     public void buildN1qlDeferredIndexes() {
         repository.buildN1qlDeferredIndexes();
+    }
+
+    public void buildN1qlDeferredIndexes(String scope, String collection) {
+        repository.buildN1qlDeferredIndexes(scope, collection);
+    }
+
+    /**
+     * Instruct the query engine to trigger the build of indexes of a scope that have been deferred, within the default management
+     *
+     * @param scope Scope name
+     */
+    public void buildN1qlDeferredIndexes(String scope) {
+        repository.buildN1qlDeferredIndexes(scope);
     }
 
     /**
