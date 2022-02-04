@@ -5,7 +5,6 @@ import com.couchbase.client.java.manager.view.DesignDocument;
 import com.github.couchmove.pojo.CouchbaseEntity;
 
 import java.time.Duration;
-import java.util.Map;
 
 /**
  * A repository for encapsulating storage, retrieval, and removal of json documents to Couchbase {@link Bucket}
@@ -108,6 +107,15 @@ public interface CouchbaseRepository<E extends CouchbaseEntity> {
      */
     void buildN1qlDeferredIndexes();
 
+    void buildN1qlDeferredIndexes(String scope, String collection);
+
+    /**
+     * Instruct the query engine to trigger the build of indexes of a scope that have been deferred, within the default management
+     *
+     * @param scope Scope name
+     */
+    void buildN1qlDeferredIndexes(String scope);
+
     /**
      * Watches all indexes, polling the query service until they become
      * "online" or the timeout has expired
@@ -115,4 +123,15 @@ public interface CouchbaseRepository<E extends CouchbaseEntity> {
      * @param duration the maximum duration for which to poll for the index to become online.
      */
     void watchN1qlIndexes(Duration duration);
+
+    void watchN1qlIndexes(String scope, String collection, Duration duration);
+
+    /**
+     * Watches all indexes, polling the query service until they become
+     * "online" or the timeout has expired
+     *
+     * @param duration the maximum duration for which to poll for the index to become online.
+     * @param scope    Scope name
+     */
+    void watchN1qlIndexes(String scope, Duration duration);
 }

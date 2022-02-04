@@ -1,26 +1,19 @@
 package com.github.couchmove;
 
+import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.*;
 import com.github.couchmove.exception.CouchmoveException;
-import com.github.couchmove.pojo.ChangeLog;
-import com.github.couchmove.pojo.Status;
-import com.github.couchmove.pojo.Type;
+import com.github.couchmove.pojo.*;
 import com.github.couchmove.pojo.Type.Constants;
-import com.github.couchmove.service.ChangeLockService;
-import com.github.couchmove.service.ChangeLogDBService;
-import com.github.couchmove.service.ChangeLogFileService;
+import com.github.couchmove.service.*;
 import com.github.couchmove.utils.Utils;
 import com.google.common.base.Stopwatch;
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import static com.github.couchmove.pojo.Status.*;
@@ -76,8 +69,8 @@ public class Couchmove {
     /**
      * Initialize a {@link Couchmove} instance with default migration path : {@value DEFAULT_MIGRATION_PATH}
      *
-     * @param collection  Couchbase {@link Collection} to execute the migrations on
-     * @param cluster Couchbase {@link Cluster} to execute N1ql Requets and insert FTS indexes
+     * @param collection Couchbase {@link Collection} to execute the migrations on
+     * @param cluster    Couchbase {@link Cluster} to execute N1ql Requets and insert FTS indexes
      */
     public Couchmove(Collection collection, Cluster cluster) {
         this(collection, cluster, DEFAULT_MIGRATION_PATH);
@@ -86,7 +79,7 @@ public class Couchmove {
     /**
      * Initialize a {@link Couchmove} instance
      *
-     * @param collection     Couchbase {@link Collection} to execute the migrations on
+     * @param collection Couchbase {@link Collection} to execute the migrations on
      * @param cluster    Couchbase {@link Cluster} to execute N1ql Requets and insert FTS indexes
      * @param changePath absolute or relative path of the migration folder containing {@link ChangeLog}
      */
@@ -228,11 +221,53 @@ public class Couchmove {
     }
 
     /**
+     * Instruct the query engine to trigger the build of indexes that have been deferred, within the default management
+     *
+     * @param scope      {@link Scope} name
+     * @param collection {@link Collection} name
+     */
+    public void buildN1qlDeferredIndexes(String scope, String collection) {
+        dbService.buildN1qlDeferredIndexes(scope, collection);
+    }
+
+    /**
+     * Instruct the query engine to trigger the build of indexes of a scope that have been deferred, within the default management
+     *
+     * @param scope {@link Scope} name
+     */
+    public void buildN1qlDeferredIndexes(String scope) {
+        dbService.buildN1qlDeferredIndexes(scope);
+    }
+
+    /**
      * Watches all indexes, polling the query service until they become
      * "online" or the timeout has expired
      */
     public void waitForN1qlIndexes(Duration duration) {
         dbService.waitForN1qlIndexes(duration);
+    }
+
+    /**
+     * Watches all indexes, polling the query service until they become
+     * "online" or the timeout has expired
+     *
+     * @param scope    {@link Scope} name.
+     * @param duration the maximum duration for which to poll for the index to become online.
+     */
+    public void waitForN1qlIndexes(String scope, Duration duration) {
+        dbService.waitForN1qlIndexes(scope, duration);
+    }
+
+    /**
+     * Watches all indexes, polling the query service until they become
+     * "online" or the timeout has expired
+     *
+     * @param scope      {@link Scope} name.
+     * @param collection {@link Collection} name.
+     * @param duration   the maximum duration for which to poll for the index to become online.
+     */
+    public void waitForN1qlIndexes(String scope, String collection, Duration duration) {
+        dbService.watchN1qlIndexes(scope, collection, duration);
     }
 
     /**

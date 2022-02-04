@@ -1,0 +1,5 @@
+CREATE INDEX collection1_index ON `${bucket}`.`test`.`collection1`(meta().id)
+  WITH { "defer_build" : true };
+
+CREATE INDEX collection2_index ON `${bucket}`.`test`.`collection2`(meta().id)
+  WITH { "defer_build" : true };
