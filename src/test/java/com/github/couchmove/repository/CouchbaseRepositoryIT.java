@@ -64,17 +64,17 @@ public class CouchbaseRepositoryIT extends BaseIT {
         ChangeLog savedChangeLog = repository.save(id, changeLog);
 
         // Then inserted one should have a cas
-        Assert.assertNotNull(savedChangeLog.getCas());
+        assertThat(savedChangeLog.getCas()).isNotNull();
 
         // And we should get it by this id
         ChangeLog result = repository.findOne(id);
 
-        Assert.assertNotNull(result);
-        Assert.assertEquals(changeLog, result);
+        assertThat(result).isNotNull();
+        assertThat(result).isEqualTo(changeLog);
 
         // And it should have the same cas
-        Assert.assertNotNull(result.getCas());
-        Assert.assertEquals(savedChangeLog.getCas(), result.getCas());
+        assertThat(result.getCas()).isNotNull();
+        assertThat(result.getCas()).isEqualTo(savedChangeLog.getCas());
     }
 
     @ParameterizedTest(name = "{0}")
@@ -85,13 +85,13 @@ public class CouchbaseRepositoryIT extends BaseIT {
 
         String id = getRandomString();
         repository.save(id, changeLog);
-        Assert.assertNotNull(repository.findOne(id));
+        assertThat(repository.findOne(id)).isNotNull();
 
         // When we delete it
         repository.delete(id);
 
         // Then we no longer should get it
-        Assert.assertNull(repository.findOne(id));
+        assertThat(repository.findOne(id)).isNull();
     }
 
     @ParameterizedTest(name = "{0}")
@@ -119,7 +119,7 @@ public class CouchbaseRepositoryIT extends BaseIT {
 
         // Then it should have a cas
         ChangeLog savedChangeLog = repository.findOne(id);
-        Assert.assertNotNull(savedChangeLog.getCas());
+        assertThat(savedChangeLog.getCas()).isNotNull();
 
         // When we change this cas
         savedChangeLog.setCas(new Random().nextLong());
@@ -146,7 +146,7 @@ public class CouchbaseRepositoryIT extends BaseIT {
 
         // Then it should be saved
         DesignDocument designDocument = getBucket().viewIndexes().getDesignDocument(name, DesignDocumentNamespace.PRODUCTION);
-        Assert.assertNotNull(designDocument);
+        assertThat(designDocument).isNotNull();
     }
 
     @ParameterizedTest(name = "{0}")
@@ -183,7 +183,7 @@ public class CouchbaseRepositoryIT extends BaseIT {
     public void should_inject_bucket_name(String description, CouchbaseRepository<ChangeLog> repository) {
         String format = "SELECT * FROM `%s`";
         String statement = format(format, "${bucket}");
-        Assert.assertEquals(format(format, getBucket().name()), ((CouchbaseRepositoryImpl) repository).injectParameters(statement));
+        assertThat(((CouchbaseRepositoryImpl) repository).injectParameters(statement)).isEqualTo(format(format, getBucket().name()));
     }
 
     @ParameterizedTest(name = "{0}")
@@ -199,10 +199,10 @@ public class CouchbaseRepositoryIT extends BaseIT {
         List<QueryIndex> indexInfos = getCluster().queryIndexes().getAllIndexes(getBucket().name()).stream()
                 .filter(indexInfo -> indexInfo.name().equals(INDEX_NAME))
                 .collect(Collectors.toList());
-        Assert.assertEquals(1, indexInfos.size());
+        assertThat(indexInfos.size()).isEqualTo(1);
         QueryIndex indexInfo = indexInfos.get(0);
-        Assert.assertEquals(INDEX_NAME, indexInfo.name());
-        Assert.assertEquals(format("`%s`", INDEX_NAME), indexInfo.indexKey().get(0));
+        assertThat(indexInfo.name()).isEqualTo(INDEX_NAME);
+        assertThat(indexInfo.indexKey().get(0)).isEqualTo(format("`%s`", INDEX_NAME));
 
         // Clean
         getCluster().queryIndexes().dropIndex(getBucket().name(), INDEX_NAME);
@@ -243,10 +243,10 @@ public class CouchbaseRepositoryIT extends BaseIT {
 
         // Then we should be bale to get it
         ChangeLog changeLog = repository.findOne("change::1");
-        Assert.assertNotNull(changeLog);
-        Assert.assertEquals("1", changeLog.getVersion());
-        Assert.assertEquals("insert users", changeLog.getDescription());
-        Assert.assertEquals(Type.N1QL, changeLog.getType());
+        assertThat(changeLog).isNotNull();
+        assertThat(changeLog.getVersion()).isEqualTo("1");
+        assertThat(changeLog.getDescription()).isEqualTo("insert users");
+        assertThat(changeLog.getType()).isEqualTo(Type.N1QL);
     }
 
 }

@@ -1,6 +1,5 @@
 package com.github.couchmove.utils;
 
-import org.junit.Assert;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -9,6 +8,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import static java.util.concurrent.TimeUnit.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author ctayeb
@@ -29,7 +29,7 @@ public class UtilsTest {
     @ParameterizedTest
     @MethodSource("durationSource")
     public void should_pretty_format_duration(long duration, TimeUnit source, String expectedFormat) {
-        Assert.assertEquals(expectedFormat, Utils.prettyFormatDuration(duration, source));
+        assertThat(Utils.prettyFormatDuration(duration, source)).isEqualTo(expectedFormat);
     }
 
 }

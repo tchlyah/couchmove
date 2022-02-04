@@ -126,8 +126,8 @@ public class CouchmoveIT extends BaseIT {
         // And successfully executed
 
         // Users inserted
-        assertEquals(new User("user", "titi", "01/09/1998"), userRepository.findOne("user::titi"));
-        assertEquals(new User("user", "toto", "10/01/1991"), userRepository.findOne("user::toto"));
+        assertThat(userRepository.findOne("user::titi")).isEqualTo(new User("user", "titi", "01/09/1998"));
+        assertThat(userRepository.findOne("user::toto")).isEqualTo(new User("user", "toto", "10/01/1991"));
 
         // Index inserted
         Optional<QueryIndex> userIndexInfo = getCluster().queryIndexes().getAllIndexes(getBucket().name()).stream()
@@ -178,7 +178,7 @@ public class CouchmoveIT extends BaseIT {
         // Then new ChangeLog is executed
         assertLike(changeLogRepository.findOne(PREFIX_ID + "1"), "1", 1, "insert users", N1QL, "V1__insert_users.n1ql", "a4b082eb19477034060ba02f60a7d40f39588e8d6fa6618b26b94cc6916d6cc3", EXECUTED);
 
-        assertEquals(new User("admin", "Administrator", "01/09/1998"), userRepository.findOne("user::Administrator"));
+        assertThat(userRepository.findOne("user::Administrator")).isEqualTo(new User("admin", "Administrator", "01/09/1998"));
 
         // And the ChangeLog marked as failed
         assertLike(changeLogRepository.findOne(PREFIX_ID + "2"), "2", null, "invalid request", N1QL, "V2__invalid_request.n1ql", "890c7bac55666a3073059c57f34e358f817e275eb68932e946ca35e9dcd428fe", FAILED);
@@ -204,7 +204,7 @@ public class CouchmoveIT extends BaseIT {
         assertLike(changeLogRepository.findOne(PREFIX_ID + "2"), "2", 2, "invalid request", N1QL, "V2__invalid_request.n1ql",
                 "8fd2066ea5ad4e4151cc5b1262542455f41e7bcefe447cbcfbc004c6fe3bac12", EXECUTED);
 
-        assertEquals(new User("user", "toto", "06/03/1997"), userRepository.findOne("user::toto"));
+        assertThat(userRepository.findOne("user::toto")).isEqualTo(new User("user", "toto", "06/03/1997"));
     }
 
     @Test
@@ -397,8 +397,8 @@ public class CouchmoveIT extends BaseIT {
 
         // Users inserted
         CouchbaseRepositoryImpl<User> userCollectionRepository = userRepository.withCollection(TEST_SCOPE, "user");
-        assertEquals(new User("user", "titi", "01/09/1998"), userCollectionRepository.findOne("titi"));
-        assertEquals(new User("user", "toto", "10/01/1991"), userCollectionRepository.findOne("toto"));
+        assertThat(userCollectionRepository.findOne("titi")).isEqualTo(new User("user", "titi", "01/09/1998"));
+        assertThat(userCollectionRepository.findOne("toto")).isEqualTo(new User("user", "toto", "10/01/1991"));
     }
 
     @Test
@@ -434,23 +434,23 @@ public class CouchmoveIT extends BaseIT {
 
         // Users inserted in the right collection
         CouchbaseRepositoryImpl<User> userCollectionRepository = userRepository.withCollection(TEST_SCOPE, "user");
-        assertEquals(new User("user", "titi", "01/09/1998"), userCollectionRepository.findOne("titi"));
-        assertEquals(new User("user", "toto", "10/01/1991"), userCollectionRepository.findOne("toto"));
+        assertThat(userCollectionRepository.findOne("titi")).isEqualTo(new User("user", "titi", "01/09/1998"));
+        assertThat(userCollectionRepository.findOne("toto")).isEqualTo(new User("user", "toto", "10/01/1991"));
     }
 
     private static void assertLike(ChangeLog changeLog, String version, Integer order, String description, Type type, String script, String checksum, Status status) {
-        assertNotNull("ChangeLog", changeLog);
-        assertEquals("version", version, changeLog.getVersion());
-        assertEquals("order", order, changeLog.getOrder());
-        assertEquals("description", description, changeLog.getDescription());
-        assertEquals("type", type, changeLog.getType());
-        assertEquals("script", script, changeLog.getScript());
-        assertEquals(checksum, changeLog.getChecksum());
-        assertEquals(status, changeLog.getStatus());
+        assertThat(changeLog).as("ChangeLog").isNotNull();
+        assertThat(changeLog.getVersion()).as("version").isEqualTo(version);
+        assertThat(changeLog.getOrder()).as("order").isEqualTo(order);
+        assertThat(changeLog.getDescription()).as("description").isEqualTo(description);
+        assertThat(changeLog.getType()).as("type").isEqualTo(type);
+        assertThat(changeLog.getScript()).as("script").isEqualTo(script);
+        assertThat(changeLog.getChecksum()).as("checksum").isEqualTo(checksum);
+        assertThat(changeLog.getStatus()).as("status").isEqualTo(status);
         if (changeLog.getStatus() != SKIPPED) {
-            assertNotNull("runner", changeLog.getRunner());
-            assertNotNull("timestamp", changeLog.getTimestamp());
-            assertNotNull("duration", changeLog.getDuration());
+            assertThat(changeLog.getRunner()).as("runner").isNotNull();
+            assertThat(changeLog.getTimestamp()).as("timestamp").isNotNull();
+            assertThat(changeLog.getDuration()).as("duration").isNotNull();
         }
     }
 
