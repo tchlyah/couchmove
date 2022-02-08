@@ -63,6 +63,7 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
     private static final ObjectMapper jsonMapper = new ObjectMapper();
 
     public static final String BUCKET_PARAM = "bucket";
+    public static final String SCOPE_PARAM = "scope";
     public static final int MAX_ATTEMPTS = 5;
     public static final String DEFAULT = "_default";
 
@@ -112,6 +113,11 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
         this.bucket = bucket;
         this.collection = bucket.defaultCollection();
         this.entityClass = entityClass;
+    }
+
+    @Override
+    public CouchbaseRepositoryImpl<E> withCollection(String collection) {
+        return new CouchbaseRepositoryImpl<>(cluster, bucket.scope(this.collection.scopeName()).collection(collection), entityClass);
     }
 
     @Override
@@ -228,12 +234,20 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
     }
 
     String injectParameters(String statement) {
-        return StrSubstitutor.replace(statement, of(BUCKET_PARAM, getBucketName()));
+        return StrSubstitutor.replace(statement, of(
+                BUCKET_PARAM, getBucketName(),
+                SCOPE_PARAM, getScopeName()
+        ));
     }
 
     @Override
     public String getBucketName() {
         return collection.bucketName();
+    }
+
+    @Override
+    public String getScopeName() {
+        return collection.scopeName();
     }
 
     @Override

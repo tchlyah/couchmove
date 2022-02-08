@@ -15,6 +15,8 @@ import java.time.Duration;
  */
 public interface CouchbaseRepository<E extends CouchbaseEntity> {
 
+    CouchbaseRepository<E> withCollection(String collection);
+
     CouchbaseRepository<E> withCollection(String scope, String collection);
 
     /**
@@ -101,6 +103,11 @@ public interface CouchbaseRepository<E extends CouchbaseEntity> {
      * @return name of the repository Couchbase {@link Bucket}
      */
     String getBucketName();
+
+    /**
+     * @return name of the repository Couchbase {@link com.couchbase.client.java.Scope}
+     */
+    String getScopeName();
 
     /**
      * Instruct the query engine to trigger the build of indexes that have been deferred, within the default management

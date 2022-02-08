@@ -98,16 +98,23 @@ public class FileUtilsTest {
         File file3 = File.createTempFile("file3", ".json", collectionDir);
         String content3 = "content3";
         Files.write(content3.getBytes(), file3);
+        // json file with collection directories
+        collectionDir = new File(tempDir, format("%s", collection));
+        collectionDir.mkdirs();
+        File file4 = File.createTempFile("file4", ".json", collectionDir);
+        String content4 = "content4";
+        Files.write(content4.getBytes(), file4);
 
         // When we read files in this directory with extension filter
         var results = FileUtils.readFilesInDirectory(tempDir.toPath(), "json", "n1ql");
 
         // Then we should have file content matching this extension
-        assertThat(results).hasSize(3);
+        assertThat(results).hasSize(4);
         assertThat(results).containsExactlyInAnyOrder(
                 new Document(null, null, file1.getName(), content1),
                 new Document(null, null, file2.getName(), content2),
-                new Document(scope, collection, file3.getName(), content3)
+                new Document(scope, collection, file3.getName(), content3),
+                new Document(null, collection, file4.getName(), content4)
         );
     }
 }
