@@ -120,6 +120,8 @@ public class FileUtils {
         switch (relativePath.getNameCount()) {
             case 1:
                 return new Document(null, null, fileName, content);
+            case 2:
+                return new Document(null, relativePath.getName(0).toString(), fileName, content);
             case 3:
                 return new Document(
                         relativePath.getName(0).toString(),

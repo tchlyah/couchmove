@@ -137,7 +137,11 @@ public class ChangeLogDBService {
         for (Document document : documents) {
             var repo = repository;
             if (document.getCollection() != null) {
-                repo = repository.withCollection(document.getScope(), document.getCollection());
+                if (document.getScope() != null) {
+                    repo = repository.withCollection(document.getScope(), document.getCollection());
+                } else {
+                    repo = repository.withCollection(document.getCollection());
+                }
             }
             repo.save(FilenameUtils.getBaseName(document.getFileName()), document.getContent());
         }

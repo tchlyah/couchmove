@@ -12,7 +12,6 @@ import com.github.couchmove.pojo.ChangeLog;
 import com.github.couchmove.pojo.Type;
 import com.github.couchmove.utils.*;
 import org.apache.commons.io.IOUtils;
-import org.junit.Assert;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -180,10 +179,10 @@ public class CouchbaseRepositoryIT extends BaseIT {
 
     @ParameterizedTest(name = "{0}")
     @MethodSource("repositoryParams")
-    public void should_inject_bucket_name(String description, CouchbaseRepository<ChangeLog> repository) {
-        String format = "SELECT * FROM `%s`";
-        String statement = format(format, "${bucket}");
-        assertThat(((CouchbaseRepositoryImpl) repository).injectParameters(statement)).isEqualTo(format(format, getBucket().name()));
+    public void should_inject_params(String description, CouchbaseRepository<ChangeLog> repository) {
+        String format = "SELECT * FROM `%s`.`%s`.test";
+        String statement = format(format, "${bucket}", "${scope}");
+        assertThat(((CouchbaseRepositoryImpl) repository).injectParameters(statement)).isEqualTo(format(format, getBucket().name(), repository.getScopeName()));
     }
 
     @ParameterizedTest(name = "{0}")
