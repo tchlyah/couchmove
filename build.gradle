@@ -42,9 +42,9 @@ dependencies {
     implementation "org.slf4j:slf4j-api:${slf4j_version}"
     implementation "com.github.adedayo.intellij.sdk:annotations-java8:${intellij_annotations_version}"
     implementation "commons-codec:commons-codec:${commons_codec_version}"
-    implementation "commons-io:commons-io:${commons_version}"
+    implementation "commons-io:commons-io:${commons_io_version}"
     implementation "com.google.guava:guava:${guava_version}"
-    implementation "commons-lang:commons-lang:${commons_version}"
+    implementation "commons-lang:commons-lang:${commons_lang_version}"
     implementation "com.vdurmont:semver4j:${semver4j_version}"
 
     testImplementation "org.junit.jupiter:junit-jupiter-api:${junit_version}"
