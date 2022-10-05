@@ -48,8 +48,8 @@ public class CouchbaseRepositoryIT extends BaseIT {
 
     static Stream<Arguments> repositoryParams() {
         return Stream.of(
-                arguments("Bucket", new CouchbaseRepositoryImpl<>(getCluster(), getBucket(), ChangeLog.class)),
-                arguments("Collection", new CouchbaseRepositoryImpl<>(getCluster(), getBucket().collection("collection"), ChangeLog.class))
+                arguments("Bucket", new CouchbaseRepositoryImpl<>(getCluster(), getBucket(), ChangeLog.class, Collections.singletonMap("myCollection", "test"))),
+                arguments("Collection", new CouchbaseRepositoryImpl<>(getCluster(), getBucket().collection("collection"), ChangeLog.class, Collections.singletonMap("myCollection", "test")))
         );
     }
 
@@ -181,9 +181,9 @@ public class CouchbaseRepositoryIT extends BaseIT {
     @ParameterizedTest(name = "{0}")
     @MethodSource("repositoryParams")
     public void should_inject_params(String description, CouchbaseRepository<ChangeLog> repository) {
-        String format = "SELECT * FROM `%s`.`%s`.test";
-        String statement = format(format, "${bucket}", "${scope}");
-        assertThat(((CouchbaseRepositoryImpl) repository).injectParameters(statement)).isEqualTo(format(format, getBucket().name(), repository.getScopeName()));
+        String format = "SELECT * FROM `%s`.`%s`.%s";
+        String statement = format(format, "${bucket}", "${scope}", "${myCollection}");
+        assertThat(((CouchbaseRepositoryImpl) repository).injectParameters(statement)).isEqualTo(format(format, getBucket().name(), repository.getScopeName(), "test"));
     }
 
     @ParameterizedTest(name = "{0}")

@@ -61,9 +61,21 @@ public class Couchmove {
      * @param changePath absolute or relative path of the migration folder containing {@link ChangeLog}
      */
     public Couchmove(Bucket bucket, Cluster cluster, String changePath) {
+        this(bucket, cluster, changePath, Collections.emptyMap());
+    }
+
+    /**
+     * Initialize a {@link Couchmove} instance
+     *
+     * @param bucket          Couchbase {@link Bucket} to execute the migrations on
+     * @param cluster         Couchbase {@link Cluster} to execute N1ql Requests and insert FTS indexes
+     * @param changePath      absolute or relative path of the migration folder containing {@link ChangeLog}
+     * @param customVariables custom variables that can be used in N1ql requests
+     */
+    public Couchmove(Bucket bucket, Cluster cluster, String changePath, Map<String, String> customVariables) {
         logger.info("Connected to bucket '{}'", collectionOrBucketName = bucket.name());
         lockService = new ChangeLockService(bucket, cluster);
-        dbService = new ChangeLogDBService(bucket, cluster);
+        dbService = new ChangeLogDBService(bucket, cluster, customVariables);
         fileService = new ChangeLogFileService(changePath);
     }
 
@@ -85,9 +97,20 @@ public class Couchmove {
      * @param changePath absolute or relative path of the migration folder containing {@link ChangeLog}
      */
     public Couchmove(Collection collection, Cluster cluster, String changePath) {
+        this(collection, cluster, changePath, Collections.emptyMap());
+    }
+
+    /**
+     * Initialize a {@link Couchmove} instance
+     *
+     * @param collection Couchbase {@link Collection} to execute the migrations on
+     * @param cluster    Couchbase {@link Cluster} to execute N1ql Requets and insert FTS indexes
+     * @param changePath absolute or relative path of the migration folder containing {@link ChangeLog}
+     */
+    public Couchmove(Collection collection, Cluster cluster, String changePath, Map<String, String> customVariables) {
         logger.info("Connected to collection '{}'", collectionOrBucketName = collection.name());
         lockService = new ChangeLockService(collection, cluster);
-        dbService = new ChangeLogDBService(collection, cluster);
+        dbService = new ChangeLogDBService(collection, cluster, customVariables);
         fileService = new ChangeLogFileService(changePath);
     }
 

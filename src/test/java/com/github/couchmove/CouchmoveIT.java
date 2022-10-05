@@ -54,7 +54,7 @@ public class CouchmoveIT extends BaseIT {
     @BeforeEach
     public void init() {
         changeLogRepository = new CouchbaseRepositoryImpl<>(getCluster(), getBucket(), ChangeLog.class);
-        changeLogDBService = new ChangeLogDBService(getBucket(), getCluster());
+        changeLogDBService = new ChangeLogDBService(getBucket(), getCluster(), Collections.emptyMap());
         userRepository = new CouchbaseRepositoryImpl<>(getCluster(), getBucket(), User.class);
     }
 

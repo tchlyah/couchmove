@@ -46,7 +46,6 @@ import static com.couchbase.client.java.manager.query.BuildQueryIndexOptions.bui
 import static com.couchbase.client.java.manager.query.GetAllQueryIndexesOptions.getAllQueryIndexesOptions;
 import static com.couchbase.client.java.manager.query.WatchQueryIndexesOptions.watchQueryIndexesOptions;
 import static com.couchbase.client.java.manager.search.UpsertSearchIndexOptions.upsertSearchIndexOptions;
-import static com.google.common.collect.ImmutableMap.of;
 import static java.lang.String.format;
 import static lombok.AccessLevel.PACKAGE;
 import static org.slf4j.LoggerFactory.getLogger;
@@ -79,11 +78,18 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
 
     private final Class<E> entityClass;
 
+    private final Map<String, String> variables;
+
     public CouchbaseRepositoryImpl(Cluster cluster, Collection collection, Class<E> entityClass) {
+        this(cluster, collection, entityClass, Collections.emptyMap());
+    }
+
+    public CouchbaseRepositoryImpl(Cluster cluster, Collection collection, Class<E> entityClass, Map<String, String> customVariables) {
         this.cluster = cluster;
         this.bucket = cluster.bucket(collection.bucketName());
         this.collection = getOrCreate(collection);
         this.entityClass = entityClass;
+        this.variables = createVariables(customVariables, this.collection);
     }
 
     private Collection getOrCreate(Collection collection) {
@@ -112,21 +118,35 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
         return collection;
     }
 
+    private Map<String, String> createVariables(Map<String, String> customVariables, Collection collection) {
+        Map<String, String> result = new HashMap<>(customVariables);
+        if(collection != null) {
+            result.put(BUCKET_PARAM, collection.bucketName());
+            result.put(SCOPE_PARAM, collection.scopeName());
+        }
+        return Collections.unmodifiableMap(result);
+    }
+
     public CouchbaseRepositoryImpl(Cluster cluster, Bucket bucket, Class<E> entityClass) {
+        this(cluster, bucket, entityClass, Collections.emptyMap());
+    }
+
+    public CouchbaseRepositoryImpl(Cluster cluster, Bucket bucket, Class<E> entityClass, Map<String, String> customVariables) {
         this.cluster = cluster;
         this.bucket = bucket;
         this.collection = bucket.defaultCollection();
         this.entityClass = entityClass;
+        this.variables = createVariables(customVariables, this.collection);
     }
 
     @Override
     public CouchbaseRepositoryImpl<E> withCollection(String collection) {
-        return new CouchbaseRepositoryImpl<>(cluster, bucket.scope(this.collection.scopeName()).collection(collection), entityClass);
+        return new CouchbaseRepositoryImpl<>(cluster, bucket.scope(this.collection.scopeName()).collection(collection), entityClass, variables);
     }
 
     @Override
     public CouchbaseRepositoryImpl<E> withCollection(String scope, String collection) {
-        return new CouchbaseRepositoryImpl<>(cluster, bucket.scope(scope).collection(collection), entityClass);
+        return new CouchbaseRepositoryImpl<>(cluster, bucket.scope(scope).collection(collection), entityClass, variables);
     }
 
     @Override
@@ -275,10 +295,7 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
     }
 
     String injectParameters(String statement) {
-        return StrSubstitutor.replace(statement, of(
-                BUCKET_PARAM, getBucketName(),
-                SCOPE_PARAM, getScopeName()
-        ));
+        return StrSubstitutor.replace(statement, variables);
     }
 
     @Override
