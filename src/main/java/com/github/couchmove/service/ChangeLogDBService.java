@@ -30,12 +30,12 @@ public class ChangeLogDBService {
 
     private final CouchbaseRepository<ChangeLog> repository;
 
-    public ChangeLogDBService(Bucket bucket, Cluster cluster) {
-        this.repository = new CouchbaseRepositoryImpl<>(cluster, bucket, ChangeLog.class);
+    public ChangeLogDBService(Bucket bucket, Cluster cluster, Map<String, String> customVariables) {
+        this.repository = new CouchbaseRepositoryImpl<>(cluster, bucket, ChangeLog.class, customVariables);
     }
 
-    public ChangeLogDBService(com.couchbase.client.java.Collection collection, Cluster cluster) {
-        this.repository = new CouchbaseRepositoryImpl<>(cluster, collection, ChangeLog.class);
+    public ChangeLogDBService(com.couchbase.client.java.Collection collection, Cluster cluster, Map<String, String> customVariables) {
+        this.repository = new CouchbaseRepositoryImpl<>(cluster, collection, ChangeLog.class, customVariables);
     }
 
     ChangeLogDBService(CouchbaseRepository<ChangeLog> repository) {
