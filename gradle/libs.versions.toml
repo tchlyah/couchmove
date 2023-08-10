@@ -13,7 +13,7 @@ guava = "31.0.1-jre"
 #<editor-fold desc="test">
 junit = "5.10.0"
 testcontainers = "1.18.3"
-mockito = "4.2.0"
+mockito = "5.4.0"
 assertj = "3.24.2"
 logback = "1.2.10"
 #</editor-fold>
