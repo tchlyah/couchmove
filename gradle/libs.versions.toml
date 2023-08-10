@@ -1,5 +1,5 @@
 [versions]
-io-freefair-lombok = "6.3.0"
+io-freefair-lombok = "8.1.0"
 io-codearte-nexus-staging = "0.21.2"
 couchbase = "3.4.9"
 slf4j = "1.7.33"
