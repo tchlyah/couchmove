@@ -6,7 +6,7 @@ slf4j = "1.7.33"
 semver4j = "3.1.0"
 intellij-annotations = "142.1"
 commons-codec = "1.15"
-commons_io = "2.7"
+commons_io = "2.13.0"
 commons_lang = "2.6"
 guava = "31.0.1-jre"
 
