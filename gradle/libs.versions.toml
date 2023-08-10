@@ -1,7 +1,7 @@
 [versions]
 io-freefair-lombok = "6.3.0"
 io-codearte-nexus-staging = "0.21.2"
-couchbase = "3.2.5"
+couchbase = "3.4.9"
 slf4j = "1.7.33"
 semver4j = "3.1.0"
 intellij-annotations = "142.1"
