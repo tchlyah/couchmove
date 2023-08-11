@@ -9,6 +9,7 @@ commons-codec = "1.16.0"
 commons_io = "2.13.0"
 commons_lang = "2.6"
 guava = "32.1.2-jre"
+picocli = "4.7.4"
 
 #<editor-fold desc="test">
 junit = "5.10.0"
@@ -27,6 +28,8 @@ commons-codec = { group = "commons-codec", name = "commons-codec", version.ref =
 commons-io = { group = "commons-io", name = "commons-io", version.ref = "commons_io" }
 guava-jre = { group = "com.google.guava", name = "guava", version.ref = "guava" }
 commons-lang = { group = 'commons-lang', name = 'commons-lang', version.ref = 'commons_lang' }
+picocli = { group = 'info.picocli', name = 'picocli', version.ref = 'picocli' }
+picocli-codegen = { group = 'info.picocli', name = 'picocli-codegen', version.ref = 'picocli' }
 
 #<editor-fold desc="test">
 junit-jupiter-api = { group = 'org.junit.jupiter', name = 'junit-jupiter-api', version.ref = 'junit' }
