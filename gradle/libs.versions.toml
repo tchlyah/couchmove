@@ -8,7 +8,7 @@ intellij-annotations = "142.1"
 commons-codec = "1.16.0"
 commons_io = "2.13.0"
 commons_lang = "2.6"
-guava = "31.0.1-jre"
+guava = "32.1.2-jre"
 
 #<editor-fold desc="test">
 junit = "5.10.0"
