@@ -2,8 +2,14 @@ plugins {
     id("java")
     id("maven-publish")
     id("signing")
+    id("application")
+    id("java-library")
     alias(libs.plugins.io.freefair.lombok)
     alias(libs.plugins.io.codearte.nexus.staging)
+}
+
+application {
+    mainClass = 'com.github.couchmove.CouchmoveCommand'
 }
 
 repositories {
@@ -14,6 +20,10 @@ repositories {
 group = "com.github.differentway"
 description = "Couchmove"
 sourceCompatibility = "1.8"
+
+compileJava {
+    options.compilerArgs += ["-Aproject=${project.group}/${project.name}"]
+}
 
 test {
     useJUnitPlatform()
@@ -38,7 +48,7 @@ task integrationTest(type: Test) {
 check.dependsOn integrationTest
 
 dependencies {
-    implementation(libs.couchbase.client)
+    api(libs.couchbase.client)
     implementation(libs.slf4j.api)
     implementation(libs.intellij.annotations.java8)
     implementation(libs.commons.codec)
@@ -46,6 +56,9 @@ dependencies {
     implementation(libs.commons.lang)
     implementation(libs.guava.jre)
     implementation(libs.semver4j)
+    implementation(libs.picocli)
+    implementation(libs.logback.classic)
+    annotationProcessor(libs.picocli.codegen)
 
     testImplementation(libs.junit.jupiter.api)
     testImplementation(libs.junit.jupiter.engine)
@@ -54,7 +67,6 @@ dependencies {
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.junit.jupiter)
     testImplementation(libs.assertj.core)
-    testImplementation(libs.logback.classic)
 }
 
 apply from: "gradle/publish.gradle"

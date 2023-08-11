@@ -310,12 +310,12 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
 
     @Override
     public void buildN1qlDeferredIndexes() {
-        logger.info("Build N1QL Deferred Indexes for default");
         buildN1qlDeferredIndexes(collection.scopeName(), collection.name());
     }
 
     @Override
     public void buildN1qlDeferredIndexes(String scope, String collection) {
+        logger.info("Build Deferred N1QL Indexes for scope '{}' and collection '{}'", scope, collection);
         BuildQueryIndexOptions buildQueryIndexOptions = withRetry(buildDeferredQueryIndexesOptions());
         if (!DEFAULT.equals(scope) || !DEFAULT.equals(collection)) {
             buildQueryIndexOptions = buildQueryIndexOptions.scopeName(scope).collectionName(collection);
@@ -333,7 +333,7 @@ public class CouchbaseRepositoryImpl<E extends CouchbaseEntity> implements Couch
 
     @Override
     public void buildN1qlDeferredIndexes(String scope) {
-        logger.info("Build N1QL Deferred Indexes for scope '{}'", scope);
+        logger.info("Build Deferred N1QL Indexes for scope '{}'", scope);
         bucket.collections().getAllScopes(withRetry(getAllScopesOptions())).stream()
                 .filter(scopeSpec -> scopeSpec.name().equals(scope))
                 .flatMap(scopeSpec -> scopeSpec.collections().stream())
