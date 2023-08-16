@@ -1,0 +1,108 @@
+jreleaser {
+    environment {
+        properties = [
+                jdkPathPrefix: 'build/jdks',
+                jdkFilePrefix: 'zulu20.32.11-ca-jdk20.0.2',
+                jdkOsxFilePrefix: 'zulu20.32.11_1-ca-jdk20.0.2'
+        ]
+    }
+
+    project {
+        name = 'couchmove'
+        description = 'Couchmove is a database migration tool for Couchbase'
+        links {
+            homepage = 'https://github.com/tchlyah/couchmove'
+        }
+        authors = ['Tayeb Chlyah']
+        license = 'APACHE-2.0'
+        inceptionYear = '2023'
+        stereotype = 'cli'
+        java {
+            mainClass = 'com.github.couchmove.CouchmoveCommand'
+        }
+    }
+
+    release {
+        github {
+            overwrite = true
+            changelog {
+                formatted = 'ALWAYS'
+                preset = 'conventional-commits'
+                contributors {
+                    format = '- {{contributorName}}{{#contributorUsernameAsLink}} ({{.}}){{/contributorUsernameAsLink}}'
+                }
+            }
+        }
+    }
+
+    assemble {
+        jlink {
+            couchmove {
+                active = 'ALWAYS'
+                imageName = '{{distributionName}}-{{projectVersion}}'
+                targetJdks {
+                    osx {
+                        platform = 'osx'
+                        path = '{{jdkPathPrefix}}/osx/{{jdkOsxFilePrefix}}-macosx_x64/zulu-20.jdk/Contents/Home'
+                    }
+                    osx_aarch_64 {
+                        platform = 'osx-aarch_64'
+                        path = '{{jdkPathPrefix}}/osx_aarch_64/{{jdkOsxFilePrefix}}-macosx_aarch64/zulu-20.jdk/Contents/Home'
+                    }
+                    linux {
+                        platform = 'linux-x86_64'
+                        path = '{{jdkPathPrefix}}/linux/{{jdkFilePrefix}}-linux_x64'
+                    }
+                    linux_aarch_64 {
+                        platform = 'linux-aarch_64'
+                        path = '{{jdkPathPrefix}}/linux_aarch_64/{{jdkFilePrefix}}-linux_aarch64'
+                    }
+                    windows {
+                        platform = 'windows-x86_64'
+                        path = '{{jdkPathPrefix}}/windows/{{jdkFilePrefix}}-win_x64'
+                    }
+                }
+
+                javaArchive {
+                    path = 'build/distributions/{{distributionName}}-{{projectVersion}}.zip'
+                }
+
+                moduleNames = [
+                        'java.sql',
+                        'java.logging',
+                        'jdk.unsupported',
+                        'java.naming',
+                        'java.xml'
+                ]
+            }
+        }
+    }
+
+    jdks {
+        osx {
+            platform = 'osx-x86_64'
+            url = 'https://cdn.azul.com/zulu/bin/zulu20.32.11_1-ca-jdk20.0.2-macosx_x64.zip'
+            checksum = '6e0485147af803e157ac635b9c4a60a00ed62d50f01a672fd1c5e303684feecf'
+        }
+        osx_aarch_64 {
+            platform = 'osx-aarch_64'
+            url = "https://cdn.azul.com/zulu/bin/zulu20.32.11_1-ca-jdk20.0.2-macosx_aarch64.zip"
+            checksum = '80f9002b6634322e6f1fad51bd143369ad63ec6f0c155f49036c5f808f0ddf90'
+        }
+        linux {
+            platform = 'linux-x86_64'
+            url = 'https://cdn.azul.com/zulu/bin/zulu20.32.11-ca-jdk20.0.2-linux_x64.zip'
+            checksum = '84b6df8f333ccdfcfb7efbe9ddef6d945e20bc7466559a30ec575ff62c10281b'
+        }
+        linux_aarch_64 {
+            platform = 'linux-aarch_64'
+            url = 'https://cdn.azul.com/zulu/bin/zulu20.32.11-ca-jdk20.0.2-linux_aarch64.tar.gz'
+            checksum = '3693dbeb83f00e5e551120ced7eb48363b56e3ee03f83d8f7b23de43c6888abc'
+        }
+        windows {
+            platform = 'windows-x86_64'
+            url = 'https://cdn.azul.com/zulu/bin/zulu20.32.11-ca-jdk20.0.2-win_x64.zip'
+            checksum = '35d386fdcbd66c9539342216bd5ef99df6ccf82bcd92ab13cbe73b6a203958f5'
+        }
+    }
+}
