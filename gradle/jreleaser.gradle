@@ -37,9 +37,10 @@ jreleaser {
 
     assemble {
         jlink {
-            couchmove {
+            standalone {
                 active = 'ALWAYS'
-                imageName = '{{distributionName}}-{{projectVersion}}'
+                imageName = '{{projectName}}-{{projectVersion}}'
+                executable = 'couchmove'
                 targetJdks {
                     osx {
                         platform = 'osx'
@@ -64,7 +65,7 @@ jreleaser {
                 }
 
                 javaArchive {
-                    path = 'build/distributions/{{distributionName}}-{{projectVersion}}.zip'
+                    path = 'build/distributions/{{projectName}}-{{projectVersion}}.zip'
                 }
 
                 moduleNames = [
@@ -74,6 +75,36 @@ jreleaser {
                         'java.naming',
                         'java.xml'
                 ]
+            }
+        }
+    }
+
+    distributions {
+        couchmove {
+            artifact {
+                path = 'build/distributions/{{projectName}}-{{projectVersion}}.zip'
+            }
+            docker {
+                active = 'ALWAYS'
+                commitAuthor {
+                    name = 'tchlyah'
+                    email = 'tayebchlyah@gmail.com'
+                }
+                repository {
+                    active = 'NEVER'
+                }
+
+                buildx {
+                    enabled = true
+                    platform('linux/amd64')
+                    platform('linux/arm64')
+                }
+
+                registries {
+                    github {
+                        server = 'ghcr.io'
+                    }
+                }
             }
         }
     }
