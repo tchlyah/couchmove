@@ -107,6 +107,16 @@ jreleaser {
                 }
             }
         }
+        standalone {
+            brew {
+                active = 'ALWAYS'
+                multiPlatform = true
+                formulaName = 'couchmove'
+                repoTap {
+                    name = 'homebrew-couchmove'
+                }
+            }
+        }
     }
 
     jdks {
