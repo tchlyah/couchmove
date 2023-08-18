@@ -25,13 +25,14 @@ jobs:
       run: chmod +x gradlew
     - name: Build with Gradle
       run: ./gradlew build
-    - name: Publish to OSSRH
-      run: ./gradlew -Pversion=${{ github.event.inputs.version }} publish closeAndReleaseRepository
-      env:
-        ORG_GRADLE_PROJECT_signingKey: ${{ secrets.SIGNING_KEY }}
-        ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.SIGNING_PASSWORD }}
-        ORG_GRADLE_PROJECT_ossrhUsername: ${{ secrets.OSSRH_USERNAME }}
-        ORG_GRADLE_PROJECT_ossrhToken: ${{ secrets.OSSRH_TOKEN }}
+#      TODO: enable
+#    - name: Publish to OSSRH
+#      run: ./gradlew -Pversion=${{ github.event.inputs.version }} publish closeAndReleaseRepository
+#      env:
+#        ORG_GRADLE_PROJECT_signingKey: ${{ secrets.SIGNING_KEY }}
+#        ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.SIGNING_PASSWORD }}
+#        ORG_GRADLE_PROJECT_ossrhUsername: ${{ secrets.OSSRH_USERNAME }}
+#        ORG_GRADLE_PROJECT_ossrhToken: ${{ secrets.OSSRH_TOKEN }}
     - name: Release
       run: ./gradlew -Pversion=${{ github.event.inputs.version }} setupJdks jreleaserAssemble jreleaserFullRelease
       env:
