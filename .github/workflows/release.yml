@@ -11,6 +11,7 @@ permissions:
   actions: write
   id-token: write
   contents: write
+  packages: write
 
 jobs:
   build:
@@ -24,7 +25,7 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
     - name: Build with Gradle
-      run: ./gradlew build -x setupJdks
+      run: ./gradlew -Pversion=${{ github.event.inputs.version }} build -x setupJdks
 #      TODO: enable
 #    - name: Publish to OSSRH
 #      run: ./gradlew -Pversion=${{ github.event.inputs.version }} publish closeAndReleaseRepository
