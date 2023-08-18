@@ -1,8 +1,10 @@
-name: Java CI with Gradle
+name: EarlyAccess
 
 on:
-  release:
-    types: [published]
+  push:
+    branches:
+      - main
+  workflow_dispatch:
 
 jobs:
   build:
@@ -16,11 +18,16 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
     - name: Build with Gradle
-      run: ./gradlew build
-    - name: Publish to OSSRH
-      run: ./gradlew -Pversion=${{ github.event.release.tag_name }} publish closeAndReleaseRepository
+      run: ./gradlew build -x setupJdks
+    - name: Publish SNAPSHOT to OSSRH
+      run: ./gradlew publish
       env:
         ORG_GRADLE_PROJECT_signingKey: ${{ secrets.SIGNING_KEY }}
         ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.SIGNING_PASSWORD }}
         ORG_GRADLE_PROJECT_ossrhUsername: ${{ secrets.OSSRH_USERNAME }}
         ORG_GRADLE_PROJECT_ossrhToken: ${{ secrets.OSSRH_TOKEN }}
+    - name: Release SNAPSHOT with JReleaser
+      run: ./gradlew setupJdks jreleaserAssemble jreleaserFullRelease
+      env:
+        JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        JRELEASER_DOCKER_GITHUB_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
