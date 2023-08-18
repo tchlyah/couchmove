@@ -1,13 +1,16 @@
 package com.github.couchmove;
 
+import ch.qos.logback.classic.*;
 import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.*;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.LoggerFactory;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
 import java.util.*;
+
+import static org.slf4j.Logger.ROOT_LOGGER_NAME;
 
 @Command(name = "couchmove", mixinStandardHelpOptions = true, version = "Couchmove 1.0")
 public class CouchmoveCommand implements Runnable {
@@ -38,6 +41,11 @@ public class CouchmoveCommand implements Runnable {
     @Option(names = {"-V", "--variable"}, split = ",", description = "Custom variables in key=value format (e.g. -V key1=value1,key2=value2)")
     private final Map<String, String> customVariables = new HashMap<>();
 
+    @Option(names = { "-v", "--verbose" }, description = {
+            "Specify multiple -v options to increase verbosity. Maximum 2",
+            "For example, `-v -v` or `-vv`" })
+    private final boolean[] verbosity = new boolean[0];
+
     public static void main(String[] args) {
         int exitCode = new CommandLine(new CouchmoveCommand()).execute(args);
         System.exit(exitCode);
@@ -45,6 +53,14 @@ public class CouchmoveCommand implements Runnable {
 
     @Override
     public void run() {
+        LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
+        Logger logger = loggerContext.getLogger(ROOT_LOGGER_NAME);
+        if (verbosity.length == 0) {
+            logger.setLevel(Level.INFO);
+        } else if (verbosity.length >= 2) {
+            logger.setLevel(Level.TRACE);
+        }
+
         Cluster cluster = Cluster.connect(url, username, password);
         Scope scope = cluster.bucket(bucket).scope(scopeName);
         Collection collection = scope.collection(collectionName);
