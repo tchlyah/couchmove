@@ -1,5 +1,5 @@
 [versions]
-io-freefair-lombok = "8.2.2"
+io-freefair-lombok = "8.3"
 io-codearte-nexus-staging = "0.21.2"
 org-jreleaser = "1.7.0"
 
