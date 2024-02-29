@@ -11,7 +11,7 @@ commons-codec = "1.16.0"
 commons_io = "2.13.0"
 commons_lang = "2.6"
 guava = "32.1.2-jre"
-picocli = "4.7.4"
+picocli = "4.7.5"
 
 #<editor-fold desc="test">
 junit = "5.10.0"
