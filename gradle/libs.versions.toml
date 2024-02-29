@@ -1,7 +1,7 @@
 [versions]
 io-freefair-lombok = "8.4"
 io-codearte-nexus-staging = "0.21.2"
-org-jreleaser = "1.7.0"
+org-jreleaser = "1.11.0"
 
 couchbase = "3.4.9"
 slf4j = "2.0.7"
