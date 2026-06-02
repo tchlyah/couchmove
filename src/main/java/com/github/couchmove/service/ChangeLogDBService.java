@@ -7,7 +7,6 @@ import com.github.couchmove.exception.CouchmoveException;
 import com.github.couchmove.pojo.*;
 import com.github.couchmove.repository.CouchbaseRepository;
 import com.github.couchmove.repository.CouchbaseRepositoryImpl;
-import lombok.var;
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -135,7 +134,7 @@ public class ChangeLogDBService {
     public void importDocuments(Collection<Document> documents) {
         logger.info("Importing {} documents", documents.size());
         for (Document document : documents) {
-            var repo = repository;
+            CouchbaseRepository<ChangeLog> repo = repository;
             if (document.getCollection() != null) {
                 if (document.getScope() != null) {
                     repo = repository.withCollection(document.getScope(), document.getCollection());
