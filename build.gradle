@@ -21,9 +21,19 @@ repositories {
 
 group = "com.github.differentway"
 description = "Couchmove"
-sourceCompatibility = "1.8"
+
+// Build/test on a modern JDK via toolchain, but compile the shipped artifact
+// to Java 8 bytecode so it stays runnable on customers' JDK 8 runtimes.
+// Couchbase Java SDK 3.x supports JDK 8-25, so JDK 8 remains a valid target.
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
 
 compileJava {
+    // --release 8 also blocks accidental use of post-8 JDK APIs (not just bytecode level).
+    options.release = 8
     options.compilerArgs += ["-Aproject=${project.group}/${project.name}"]
 }
 
@@ -65,6 +75,7 @@ dependencies {
     testImplementation(libs.junit.jupiter.api)
     testImplementation(libs.junit.jupiter.engine)
     testImplementation(libs.junit.jupiter.params)
+    testRuntimeOnly(libs.junit.platform.launcher)
     testImplementation(libs.testcontainers.couchbase)
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.junit.jupiter)

@@ -12,7 +12,6 @@ import com.github.couchmove.repository.CouchbaseRepository;
 import com.github.couchmove.repository.CouchbaseRepositoryImpl;
 import com.github.couchmove.service.ChangeLogDBService;
 import com.github.couchmove.utils.BaseIT;
-import lombok.var;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.*;
 

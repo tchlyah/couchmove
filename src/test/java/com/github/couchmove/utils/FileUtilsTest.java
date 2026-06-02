@@ -2,7 +2,6 @@ package com.github.couchmove.utils;
 
 import com.github.couchmove.pojo.Document;
 import com.google.common.io.Files;
-import lombok.var;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
