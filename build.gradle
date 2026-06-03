@@ -5,7 +5,6 @@ plugins {
     id("application")
     id("java-library")
     alias(libs.plugins.io.freefair.lombok)
-    alias(libs.plugins.io.codearte.nexus.staging)
     alias(libs.plugins.org.jreleaser)
     alias(libs.plugins.org.jreleaser.jdks)
 }
@@ -51,6 +50,9 @@ task integrationTest(type: Test) {
     useJUnitPlatform()
     description = "Execute integration tests."
     group = "verification"
+    // Gradle 9 no longer wires a custom Test task to the test source set implicitly.
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
     include "**/*IT*", "**/*IntTest*"
 
     testLogging {
@@ -84,3 +86,8 @@ dependencies {
 
 apply from: "gradle/publish.gradle"
 apply from: "gradle/jreleaser.gradle"
+
+// JReleaser deploys from the local staging repo populated by `publish`.
+tasks.named('jreleaserDeploy') {
+    dependsOn 'publish'
+}

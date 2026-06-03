@@ -1,7 +1,6 @@
 [versions]
 io-freefair-lombok = "9.5.0"
-io-codearte-nexus-staging = "0.21.2"
-org-jreleaser = "1.7.0"
+org-jreleaser = "1.24.0"
 
 couchbase = "3.11.3"
 slf4j = "2.0.17"
@@ -49,6 +48,5 @@ logback-classic = { group = 'ch.qos.logback', name = 'logback-classic', version.
 
 [plugins]
 io-freefair-lombok = { id = "io.freefair.lombok", version.ref = "io-freefair-lombok" }
-io-codearte-nexus-staging = { id = "io.codearte.nexus-staging", version.ref = "io-codearte-nexus-staging" }
 org-jreleaser = { id = "org.jreleaser", version.ref = "org-jreleaser" }
 org-jreleaser-jdks = { id = "org.jreleaser.jdks", version.ref = "org-jreleaser" }
