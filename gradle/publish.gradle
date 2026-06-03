@@ -1,35 +1,20 @@
-task sourcesJar(type: Jar) {
-    archiveClassifier = 'sources'
-    from sourceSets.main.allJava
-}
-
-task javadocJar(type: Jar) {
-    archiveClassifier = 'javadoc'
-    from javadoc.destinationDir
-}
-
-artifacts {
-    archives sourcesJar, javadocJar
+java {
+    withSourcesJar()
+    withJavadocJar()
 }
 
 publishing {
     repositories {
         maven {
-            def releasesRepoUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
-            def snapshotsRepoUrl = "https://oss.sonatype.org/content/repositories/snapshots/"
-            url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
-            credentials {
-                username = findProperty("ossrhUsername")
-                password = findProperty("ossrhToken")
-            }
+            // Stage artifacts locally; JReleaser deploys them to the Central Portal
+            // (OSSRH / oss.sonatype.org was sunset on 2025-06-30).
+            name = 'staging'
+            url = layout.buildDirectory.dir('staging-deploy')
         }
     }
     publications {
         mavenJava(MavenPublication) {
             from components.java
-
-            artifact sourcesJar
-            artifact javadocJar
 
             pom {
                 name = 'Couchmove'
@@ -65,11 +50,8 @@ publishing {
 signing {
     def signingKey = findProperty("signingKey")
     def signingPassword = findProperty("signingPassword")
+    // Only sign when a key is provided (e.g. CI). Snapshots are published unsigned.
+    required = { signingKey != null && !version.toString().endsWith("SNAPSHOT") }
     useInMemoryPgpKeys(signingKey, signingPassword)
     sign publishing.publications.mavenJava
-}
-
-nexusStaging {
-    username = findProperty("ossrhUsername")
-    password = findProperty("ossrhToken")
 }
