@@ -6,10 +6,21 @@ java {
 publishing {
     repositories {
         maven {
-            // Stage artifacts locally; JReleaser deploys them to the Central Portal
-            // (OSSRH / oss.sonatype.org was sunset on 2025-06-30).
-            name = 'staging'
-            url = layout.buildDirectory.dir('staging-deploy')
+            // OSSRH / oss.sonatype.org was sunset on 2025-06-30.
+            // - Releases : staged locally, then deployed to the Central Portal by JReleaser
+            //              (Publisher API bundle flow — does NOT accept snapshots).
+            // - Snapshots: published straight to the Central Portal snapshot repo via Maven.
+            if (version.toString().endsWith('SNAPSHOT')) {
+                name = 'centralPortalSnapshots'
+                url = 'https://central.sonatype.com/repository/maven-snapshots/'
+                credentials {
+                    username = findProperty('centralUsername') ?: System.getenv('JRELEASER_MAVENCENTRAL_USERNAME')
+                    password = findProperty('centralToken') ?: System.getenv('JRELEASER_MAVENCENTRAL_TOKEN')
+                }
+            } else {
+                name = 'staging'
+                url = layout.buildDirectory.dir('staging-deploy')
+            }
         }
     }
     publications {

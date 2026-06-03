@@ -26,10 +26,10 @@ jreleaser {
         maven {
             mavenCentral {
                 sonatype {
-                    active = 'ALWAYS'
+                    // Releases only — the Publisher API does not accept snapshots
+                    // (snapshots are published by Gradle to the Central snapshot repo).
+                    active = 'RELEASE'
                     url = 'https://central.sonatype.com/api/v1/publisher'
-                    // Allow snapshot deployments (routed to the Central snapshot repo).
-                    snapshotSupported = true
                     // Artifacts are signed by the Gradle signing plugin; the .asc
                     // files are already in the staging dir, so JReleaser must not sign.
                     sign = false

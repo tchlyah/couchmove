@@ -21,10 +21,8 @@ jobs:
     - name: Build with Gradle
       run: ./gradlew build -x setupJdks
     - name: Publish SNAPSHOT to Maven Central Portal
-      run: ./gradlew publish jreleaserDeploy
+      run: ./gradlew publish
       env:
-        ORG_GRADLE_PROJECT_signingKey: ${{ secrets.SIGNING_KEY }}
-        ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.SIGNING_PASSWORD }}
         JRELEASER_MAVENCENTRAL_USERNAME: ${{ secrets.OSSRH_USERNAME }}
         JRELEASER_MAVENCENTRAL_TOKEN: ${{ secrets.OSSRH_TOKEN }}
     - name: Release SNAPSHOT with JReleaser
